@@ -65,7 +65,7 @@
                                 </div>
 
                                 <!-- Table -->
-                                <table class="table table-sm table-bordered border-dark table_rtl">
+                                <table class="table table-sm table-bordered border-dark table_rtl text-center">
 
                                     <thead class="custom-header">
                                         <tr>
@@ -93,7 +93,7 @@
                                                 <td>
                                                     <t t-if="d['attendance']">
                                                         <span t-field="d['attendance'].check_in"
-                                                              t-options='{"format": "dd/MM/yyyy HH:mm"}'/>
+                                                              t-options='{"format": "HH:mm:ss"}'/>
                                                     </t>
                                                     <t t-else="">-</t>
                                                 </td>
@@ -102,7 +102,7 @@
                                                 <td>
                                                     <t t-if="d['attendance'] and d['attendance'].check_out">
                                                         <span t-field="d['attendance'].check_out"
-                                                              t-options='{"format": "dd/MM/yyyy HH:mm"}'/>
+                                                              t-options='{"format": "HH:mm:ss"}'/>
                                                     </t>
                                                     <t t-else="">-</t>
                                                 </td>

@@ -1,0 +1,40 @@
+<odoo>
+    <!-- Action: Attendance Policy -->
+    <record id="action_bank_attendance_policy" model="ir.actions.act_window">
+        <field name="name">Aldaleel Attendance Policy</field>
+        <field name="res_model">bank.attendance.policy</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="oe_view_nocontent_create">
+                Click "Create" to add a new attendance policy.
+            </p>
+        </field>
+    </record>
+
+    <!-- Menu: Attendance -->
+    <menuitem id="menu_bank_attendance_root" name="Aldaleel Attendance" sequence="10"/>
+
+    <menuitem id="menu_bank_attendance_policy"
+              name="Attendance Policy"
+              parent="menu_bank_attendance_root"
+              action="action_bank_attendance_policy"
+              sequence="1"/>
+
+    <!-- Action: Attendance Penalty -->
+    <record id="action_bank_attendance_penalty" model="ir.actions.act_window">
+        <field name="name">Attendance Penalty</field>
+        <field name="res_model">bank.attendance.penalty</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="oe_view_nocontent_create">
+                Attendance penalties and carry-forward lateness per employee.
+            </p>
+        </field>
+    </record>
+
+    <menuitem id="menu_bank_attendance_penalty"
+              name="Attendance Penalties"
+              parent="menu_bank_attendance_root"
+              action="action_bank_attendance_penalty"
+              sequence="2"/>
+</odoo>

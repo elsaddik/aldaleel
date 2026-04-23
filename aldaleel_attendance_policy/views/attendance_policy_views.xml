@@ -1,0 +1,36 @@
+<odoo>
+    <record id="view_attendance_policy_form" model="ir.ui.view">
+        <field name="name">attendance.policy.form</field>
+        <field name="model">bank.attendance.policy</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <field name="work_start_minutes"/>
+                        <field name="grace_minutes"/>
+                        <field name="absence_after_minutes"/>
+                        <field name="checkout_minutes"/>
+                        <field name="late_to_absence"/>
+<!--                        <field name="cutoff_day"/>-->
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+
+    <record id="view_attendance_policy_list" model="ir.ui.view">
+        <field name="name">attendance.policy.list</field>
+        <field name="model">bank.attendance.policy</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="work_start_minutes"/>
+                <field name="grace_minutes"/>
+                <field name="absence_after_minutes"/>
+                <field name="checkout_minutes"/>
+                <field name="late_to_absence"/>
+<!--                <field name="cutoff_day"/>-->
+            </list>
+        </field>
+    </record>
+</odoo>

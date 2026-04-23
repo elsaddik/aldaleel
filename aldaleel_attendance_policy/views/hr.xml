@@ -1,0 +1,110 @@
+<odoo>
+    <record id="hr_contract_type_view_form_inherit_custom" model="ir.ui.view">
+        <field name="name">hr.contract.type.form.inherit.custom</field>
+        <field name="model">hr.contract.type</field>
+        <field name="inherit_id" ref="hr.hr_contract_type_view_form"/>
+        <field name="arch" type="xml">
+
+            <!-- مثال: إضافة field جديد بعد name -->
+            <xpath expr="//field[@name='name']" position="after">
+                <field name="include_in_payslip"/>
+            </xpath>
+
+        </field>
+    </record>
+
+    <record id="hr_payslip_type_inherit_custom" model="ir.ui.view">
+        <field name="name">hr.payslip.form.inherit.custom</field>
+        <field name="model">hr.payslip</field>
+        <field name="inherit_id" ref="hr_payroll.view_hr_payslip_form"/>
+        <field name="arch" type="xml">
+
+            <!-- مثال: إضافة field جديد بعد name -->
+            <xpath expr="//field[@name='struct_id']" position="after">
+                <field name="include_in_payslip" string="free employee" invisible="0"/>
+                <field name="abs_count" invisible="not include_in_payslip or not employee_id"/>
+                <field name="abs_count_to_add" invisible="not include_in_payslip or not employee_id"/>
+                <field name="add_deduct" string="Add Deduction" invisible="not include_in_payslip or not employee_id"/>
+            </xpath>
+
+        </field>
+    </record>
+
+
+    <record id="view_payslip_run_form_inherit" model="ir.ui.view">
+        <field name="name">hr.payslip.run.form.inherit.workflow</field>
+        <field name="model">hr.payslip</field>
+        <field name="inherit_id" ref="hr_payroll.view_hr_payslip_form"/>
+        <field name="arch" type="xml">
+
+            <xpath expr="//button[@name='action_payslip_done']" position="replace">
+                <button string="Create Draft Entry" name="action_payslip_done" type="object"
+                        invisible="state != 'account'  or not line_ids"
+                        groups="aldaleel_attendance_policy.group_accounting_user_custom" class="oe_highlight"
+                        context="{'payslip_generate_pdf': True}" confirm="Are you sure you want to proceed?"/>
+            </xpath>
+
+            <xpath expr="//field[@name='state']" position="replace">
+                <field name="state" widget="statusbar" statusbar_visible="draft,manager,account,validated"/>
+            </xpath>
+
+
+            <xpath expr="//header" position="inside">
+
+                <button name="action_send_to_manager"
+                        string="send to manager"
+                        type="object"
+                        invisible="state != 'draft'"
+                        groups="aldaleel_attendance_policy.group_hr_payroll_user_custom"
+                        class="btn-primary"/>
+
+                <button name="action_manager_approve"
+                        string="Approve"
+                        type="object"
+                        invisible="state != 'manager'"
+                        groups="aldaleel_attendance_policy.group_general_manager"
+                        class="btn-success"/>
+
+                <button name="action_manager_reject"
+                        string="Reject"
+                        type="object"
+                        invisible="state != 'manager'"
+                        groups="aldaleel_attendance_policy.group_general_manager"
+                        class="btn-danger"/>
+            </xpath>
+
+        </field>
+    </record>
+
+    <record id="view_hr_payslip_inherit_list" model="ir.ui.view">
+        <field name="name">hr.payslip.inherit</field>
+        <field name="model">hr.payslip</field>
+        <field name="inherit_id" ref="hr_payroll.view_hr_payslip_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//list" position="inside">
+            <field name="state" column_invisible="True"/>
+            </xpath>
+            <xpath expr="//list/header" position="replace">
+                <header>
+                    <button string="Validate" name="action_validate" type="object" class="oe_highlight"
+                           groups="aldaleel_attendance_policy.group_general_manager,aldaleel_attendance_policy.group_accounting_user_custom"/>
+                    <button string="Compute Sheet" name="compute_sheet" type="object" class="oe_highlight"
+                            groups="aldaleel_attendance_policy.group_hr_payroll_user_custom,aldaleel_attendance_policy.group_accounting_user_custom,aldaleel_attendance_policy.group_general_manager"/>
+                    <button string="Confirm" name="action_payslip_done" type="object" class="oe_highlight"
+                            context="{'payslip_generate_pdf': True}"
+                            groups="aldaleel_attendance_policy.group_accounting_user_custom,aldaleel_attendance_policy.group_general_manager"/>
+                    <button string="Mark as Paid" name="action_payslip_paid" type="object" class="oe_highlight"
+                            groups="aldaleel_attendance_policy.group_accounting_user_custom,aldaleel_attendance_policy.group_general_manager"/>
+                    <button string="Print" name="action_print_payslip" type="object"/>
+
+                </header>
+
+            </xpath>
+        </field>
+    </record>
+
+
+</odoo>
+
+    
+

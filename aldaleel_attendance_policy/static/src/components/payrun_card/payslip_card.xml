@@ -1,0 +1,15 @@
+<templates>
+      <t t-name="aldaleel_attendance_policy.PayRunCard"
+       t-inherit="hr_payroll.PayRunCard"
+       t-inherit-mode="extension">
+
+        <xpath expr="//t[@t-set-slot='confirm']" position="attributes">
+            <attribute name="isVisible">
+                payrun.state == 'account' and !payrun.empty_payslips
+            </attribute>
+        </xpath>
+
+    </t>
+
+
+</templates>

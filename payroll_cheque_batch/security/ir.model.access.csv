@@ -1,0 +1,4 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_payroll_cheque_batch_payroll_cheque_batch,payroll_cheque_batch.payroll_cheque_batch,model_cheque_batch,base.group_user,1,1,1,1
+access_payroll_line,payroll_cheque_batch.payroll_line,model_cheque_batch_line,base.group_user,1,1,1,1
+

@@ -1,0 +1,21 @@
+<odoo>
+<record id="cron_bank_attendance" model="ir.cron">
+    <field name="name">Bank Attendance Calculation</field>
+    <field name="model_id" ref="model_bank_attendance_penalty"/>
+    <field name="state">code</field>
+    <field name="code">model.run_attendance_engine()</field>
+    <field name="interval_number">1</field>
+    <field name="interval_type">days</field>
+</record>
+
+
+    <record id="ir_cron_generate_absence" model="ir.cron">
+        <field name="name">Generate Daily Absence</field>
+        <field name="model_id" ref="hr.model_hr_employee"/>
+        <field name="state">code</field>
+        <field name="code">model.generate_daily_absence()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+    </record>
+
+</odoo>

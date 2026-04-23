@@ -1,0 +1,41 @@
+<odoo>
+
+        <record id="hr_payslip_run_kanban_inherit_custom" model="ir.ui.view">
+            <field name="name">hr.payslip.run.kanban.inherit.workflow</field>
+            <field name="model">hr.payslip.run</field>
+            <field name="inherit_id" ref="hr_payroll.hr_payslip_run_view_kanban"/>
+            <field name="arch" type="xml">
+
+                <xpath expr="//button[@name='action_validate']" position="attributes">
+                    <attribute name="groups">aldaleel_attendance_policy.group_accounting_user_custom</attribute>
+                </xpath>
+
+                <xpath expr="//t[@t-name='menu']" position="inside">
+                    <button name="action_send_to_manager"
+                            type="object"
+                            string="Send to Manager"
+                            class="btn btn-primary"
+                            t-if="record.state and record.state.raw_value == '01_ready'"
+                            groups="aldaleel_attendance_policy.group_hr_payroll_user_custom"
+                    />
+
+                    <button name="action_manager_approve"
+                            type="object"
+                            string="Approve"
+                            class="btn btn-success"
+                            t-if="record.state and record.state.raw_value == 'manager'"
+                            groups="aldaleel_attendance_policy.group_general_manager"/>
+
+                    <button name="action_manager_reject"
+                            type="object"
+                            string="Reject"
+                            class="btn btn-danger"
+                            t-if="record.state and record.state.raw_value == 'manager'"
+                            groups="aldaleel_attendance_policy.group_general_manager"/>
+
+                </xpath>
+            </field>
+        </record>
+
+
+</odoo>

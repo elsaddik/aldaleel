@@ -1,0 +1,193 @@
+<odoo>
+    <template id="attendance_report_template">
+        <t t-call="web.html_container">
+            <style>
+                @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&amp;display=swap');
+
+                .page_rtl {
+                direction: rtl !important;
+                text-align: right !important;
+                font-family: 'Cairo', sans-serif !important;
+                font-size: 13px;
+                }
+
+                .table_rtl {
+                direction: rtl !important;
+                width: 100%;
+                border-collapse: collapse;
+                text-align: center !important;
+                }
+
+                .table thead {
+                display: table-header-group;
+                }
+
+                .custom-header {
+                background-color: #1a237e !important;
+                color: #ffffff !important;
+                }
+
+                .custom-header th {
+                border: 1px solid #000000 !important;
+                padding: 10px !important;
+                }
+
+                tr { page-break-inside: avoid; }
+            </style>
+
+            <t t-call="web.external_layout">
+                <div class="page page_rtl" style="direction:rtl; font-family: 'Cairo', sans-serif !important;">
+
+                    <t t-if="docs">
+                        <t t-foreach="docs" t-as="doc">
+
+                            <div class="employee_block"
+                                 style="page-break-after: always; padding-top: 20px;">
+
+                                <!-- Header -->
+                                <div class="row mb-3">
+                                    <div class="col-12 text-center">
+                                        <h3 style="color: #1a237e; font-weight: bold; border-bottom: 2px solid #1a237e; display: inline-block;">
+                                            تقرير حضور وانصراف الموظف
+                                        </h3>
+
+                                        <h4 class="mt-3">
+                                            <t t-esc="doc['employee'].name"/>
+                                        </h4>
+
+                                        <p class="text-muted">
+                                            الفترة من:
+                                            <span t-esc="date_from"/>
+                                            | إلى:
+                                            <span t-esc="date_to"/>
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <!-- Table -->
+                                <table class="table table-sm table-bordered border-dark table_rtl">
+
+                                    <thead class="custom-header">
+                                        <tr>
+                                            <th  style="text-align: center !important; vertical-align: middle !important;">التاريخ</th>
+                                            <th style="text-align: center !important; vertical-align: middle !important;">وقت الحضور</th>
+                                            <th style="text-align: center !important; vertical-align: middle !important;">وقت الانصراف</th>
+                                            <th style="text-align: center !important; vertical-align: middle !important;">التأخير</th>
+                                            <th style="text-align: center !important; vertical-align: middle !important;">خروج مبكر</th>
+                                            <th style="text-align: center !important; vertical-align: middle !important;">الحالة</th>
+                                        </tr>
+                                    </thead>
+
+                                    <tbody>
+
+                                        <!-- 🔥 Loop على الأيام -->
+                                        <t t-foreach="doc['days']" t-as="d">
+                                            <tr>
+
+                                                <!-- التاريخ -->
+                                                <td>
+                                                    <t t-esc="d['date']"/>
+                                                </td>
+
+                                                <!-- check in -->
+                                                <td>
+                                                    <t t-if="d['attendance']">
+                                                        <span t-field="d['attendance'].check_in"
+                                                              t-options='{"format": "dd/MM/yyyy HH:mm"}'/>
+                                                    </t>
+                                                    <t t-else="">-</t>
+                                                </td>
+
+                                                <!-- check out -->
+                                                <td>
+                                                    <t t-if="d['attendance'] and d['attendance'].check_out">
+                                                        <span t-field="d['attendance'].check_out"
+                                                              t-options='{"format": "dd/MM/yyyy HH:mm"}'/>
+                                                    </t>
+                                                    <t t-else="">-</t>
+                                                </td>
+
+                                                <!-- delay -->
+                                                <td t-attf-class="#{d['attendance'] and d['attendance'].is_late and 'text-danger fw-bold' or ''}">
+                                                    <t t-if="d['attendance']">
+                                                        <span t-field="d['attendance'].delay_display"/>
+                                                    </t>
+                                                    <t t-else="">-</t>
+                                                </td>
+
+                                                <!-- early -->
+                                                <td t-attf-class="#{d['attendance'] and d['attendance'].is_early and 'text-warning fw-bold' or ''}">
+                                                    <t t-if="d['attendance']">
+                                                        <span t-field="d['attendance'].early_display"/>
+                                                    </t>
+                                                    <t t-else="">-</t>
+                                                </td>
+
+                                                <!-- الحالة -->
+                                                <td>
+                                                    <t t-if="d['attendance']">
+
+                                                        <t t-set="st" t-value="[]"/>
+                                                        <t t-if="d['attendance'].is_mission" t-set="st"
+                                                           t-value="st + ['مهمة عمل']"/>
+                                                        <t t-if="d['attendance'].is_late" t-set="st"
+                                                           t-value="st + ['تأخير']"/>
+                                                        <t t-if="d['attendance'].is_early" t-set="st"
+                                                           t-value="st + ['خروج مبكر']"/>
+
+                                                        <t t-if="st">
+                                                            <span t-esc="' / '.join(st)"/>
+                                                        </t>
+                                                        <t t-else="">
+                                                            <span class="text-success">منتظم</span>
+                                                        </t>
+
+                                                    </t>
+
+                                                    <!-- 🔥 مفيش بصمة -->
+                                                    <t t-else="">
+                                                        <span class="text-danger fw-bold">
+                                                            لا توجد بصمة
+                                                        </span>
+                                                    </t>
+
+                                                </td>
+
+                                            </tr>
+                                        </t>
+
+                                    </tbody>
+                                </table>
+
+                            </div>
+                        </t>
+                    </t>
+
+                    <t t-else="">
+                        <div class="alert alert-info text-center mt-5">
+                            لا توجد بيانات للعرض في الفترة المختارة
+                        </div>
+                    </t>
+
+                </div>
+            </t>
+        </t>
+    </template>
+
+    <record id="paperformat_attendance_dense" model="report.paperformat">
+        <field name="name">Attendance Dense Report</field>
+        <field name="default" eval="True"/>
+        <field name="format">A4</field>
+        <field name="page_height">0</field>
+        <field name="page_width">0</field>
+        <field name="orientation">Portrait</field>
+        <field name="margin_top">10</field>
+        <field name="margin_bottom">10</field>
+        <field name="margin_left">7</field>
+        <field name="margin_right">7</field>
+        <field name="header_line" eval="False"/>
+        <field name="header_spacing">0</field>
+        <field name="dpi">90</field>
+    </record>
+
+</odoo>

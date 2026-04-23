@@ -1,0 +1,63 @@
+
+<odoo>
+    <record id="view_cheque_batch_form" model="ir.ui.view">
+        <field name="name">cheque.batch.form</field>
+        <field name="model">cheque.batch</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="date"/>
+                        <field name="bank_id"/>
+                        <field name="date_from"/>
+                        <field name="date_to"/>
+                        <field name="company_id" invisible="True"/>
+                    </group>
+
+                    <button name="action_load_payslips" type="object" string="Load Payslips"/>
+
+                    <field name="line_ids">
+                        <list editable="bottom">
+                            <field name="employee_id"/>
+                            <field name="payslip_id"/>
+                            <field name="amount"/>
+                            <field name="currency_id" column_invisible="True"/>
+                        </list>
+                    </field>
+
+                    <group>
+                        <field name="total_amount"/>
+                        <field name="amount_text"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+
+    <record id="view_cheque_batch_list" model="ir.ui.view">
+            <field name="name">cheque.batch.form</field>
+        <field name="model">cheque.batch</field>
+            <field name="arch" type="xml">
+                <list string="Batch Cheque" multi_edit="1">
+                   <field name="name"/>
+                        <field name="date"/>
+                        <field name="bank_id"/>
+                        <field name="date_from"/>
+                        <field name="date_to"/>
+                </list>
+            </field>
+        </record>
+
+
+
+
+    <record id="action_cheque_batch" model="ir.actions.act_window">
+        <field name="name">Cheque Batch</field>
+        <field name="res_model">cheque.batch</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="cheque_batch" parent="hr_payroll.menu_hr_payroll_payslips" action="action_cheque_batch"/>
+</odoo>

@@ -1,0 +1,44 @@
+<odoo>
+    <!-- list View -->
+    <record id="view_bank_attendance_penalty_list" model="ir.ui.view">
+        <field name="name">bank.attendance.penalty.list</field>
+        <field name="model">bank.attendance.penalty</field>
+        <field name="arch" type="xml">
+            <list string="Attendance Penalties">
+                <field name="employee_id"/>
+                <field name="period_start"/>
+                <field name="period_end"/>
+                <field name="late_count"/>
+                <field name="absence_count"/>
+                <field name="early_leave_count" string="Early count"/>
+                 <field name="delay_hours" string="Total late Minutes"/>
+                <field name="early_hours" string="total Early minutes"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Form View -->
+    <record id="view_bank_attendance_penalty_form" model="ir.ui.view">
+        <field name="name">bank.attendance.penalty.form</field>
+        <field name="model">bank.attendance.penalty</field>
+        <field name="arch" type="xml">
+            <form string="Attendance Penalty">
+                <sheet>
+                    <group>
+                        <field name="employee_id"/>
+                        <field name="period_start"/>
+                        <field name="period_end"/>
+                    </group>
+                    <group>
+                        <field name="late_count"/>
+                        <field name="absence_count"/>
+                        <field name="early_leave_count"/>
+                        <field name="delay_hours"/>
+                        <field name="early_hours"/>
+
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+</odoo>

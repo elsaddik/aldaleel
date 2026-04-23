@@ -1,0 +1,220 @@
+<odoo>
+    <template id="cheque_report_template">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+
+                <t t-call="web.external_layout">
+<!-- style="direction: rtl; text-align: right; font-family: Arial, Tahoma, sans-serif; font-size:14px;"-->
+                    <div class="page">
+
+                        <style>
+
+                                @font-face {
+                                font-family: 'Cairo';
+                                src: url('/payroll_cheque_batch/static/src/fonts/Cairo-Regular.ttf') format('truetype');
+                                }
+
+                                body {
+                                font-family: 'Cairo', Arial, sans-serif;
+                                direction: rtl;
+                                }
+
+                            table {
+                            page-break-inside: auto;
+                            }
+                            tr {
+                            page-break-inside: avoid;
+                            page-break-after: auto;
+                            }
+                            thead {
+                            display: table-header-group; /* يكرر رأس الجدول في كل صفحة جديدة */
+                            }
+                            tfoot {
+                            display: table-footer-group;
+                            }
+                        </style>
+
+
+                        <!-- Title -->
+                        <h2 style="text-align:center; margin-bottom:20px;">
+                            حافظة ارفاق صك
+                        </h2>
+                        <div class="row mb-4" style="border-right: 5px solid #333; padding-right: 15px;">
+                            <div class="col-12">
+                                <h4 style="margin-bottom: 5px;">
+                                    <strong>السادة / مصرف</strong>
+                                    <span t-field="doc.bank_id.name" style="text-decoration: underline;"/>
+                                </h4>
+                                <p style="font-size: 14px;">المحترمين،،</p>
+                            </div>
+                        </div>
+
+                        <div class="row mb-4" style="line-height: 2.2; font-size: 17px; text-align: justify;">
+                            <div class="col-12">
+                                <p>
+                                    نرفق لكم طية الصك رقم :
+                                    <strong style="border-bottom: 1px dotted #000; padding: 0 10px;">
+                                        <span t-field="doc.name"/>
+                                    </strong>
+
+                                    الصادر بتاريخ
+                                    <strong style="border-bottom: 1px dotted #000; padding: 0 10px;">
+                                        <span t-field="doc.date"/>
+                                    </strong>
+
+                                </p>
+
+                                <p style="margin-top: 15px;">
+                                    وقيمته:
+                                    <strong style="font-size: 19px;">
+<!--                                        (<span t-esc="'{:,.2f}'.format(doc.total_amount)"/>)-->
+                                        ( <span t-esc="doc.total_amount"/>)
+                                        <span t-field="doc.amount_text"/>
+
+                                    </strong>
+                                </p>
+
+                                <p style="margin-top: 15px;">
+                                    وهو يمثل صافي مرتبات الموظفين المدرجة أسماؤهم أدناه وذلك عن شهر:
+                                    <strong>
+
+                                        <t t-esc="doc.date_from.strftime('%Y')"/>
+                                        /
+                                        <t t-esc="doc.date_from.strftime('%m')"/>
+
+                                    </strong>
+
+                                    <br/>
+                                    يرجى التفضل بقيد القيمة لحساباتهم الجارية المفتوحة طرفكم كما هو موضح بالجدول التالي:
+
+                                </p>
+                            </div>
+                        </div>
+
+
+                        <!-- Employees Table -->
+                        <table style="width:100%; border-collapse: collapse; border:1px solid #000;">
+                            <thead>
+                                <tr style="background:#f2f2f2;">
+                                    <th style="border:1px solid #000; padding:8px; text-align:center;">م</th>
+                                    <th style="border:1px solid #000; padding:8px;text-align:center;">اسم الموظف</th>
+                                    <th style="border:1px solid #000; padding:8px;text-align:center;">الرقم الوطني</th>
+                                    <th style="border:1px solid #000; padding:8px;text-align:center;">رقم الحساب</th>
+                                    <th style="border:1px solid #000; padding:8px; text-align:center;">المبلغ بالدينار
+                                    </th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                <t t-set="i" t-value="1"/>
+                                <t t-foreach="doc.line_ids" t-as="line">
+
+                                    <tr>
+                                        <td style="border:1px solid #000; padding:6px; text-align:center;">
+                                            <t t-esc="i"/>
+                                        </td>
+
+                                        <td style="border:1px solid #000; padding:6px;text-align:center;">
+                                            <t t-esc="line.employee_id.name"/>
+                                        </td>
+                                        <td style="border:1px solid #000; padding:6px;text-align:center;">
+                                            <t t-esc="line.employee_id.identification_id"/>
+                                        </td>
+                                        <td style="border:1px solid #000; padding:6px;text-align:center;">
+                                            <t t-esc="line.employee_id.bank_account_ids.acc_number"/>
+                                        </td>
+
+                                        <td style="border:1px solid #000; padding:6px; text-align:center;">
+<!--                                            <t t-esc="'{:,.2f}'.format(line.amount)"/>-->
+                                             <t t-esc="line.amount"/>
+                                        </td>
+                                    </tr>
+
+                                    <t t-set="i" t-value="i + 1"/>
+                                </t>
+                                <tr style="background:#f2f2f2;">
+                                    <td colspan="4"
+                                        style="border:1px solid #000; padding:8px; text-align:right; font-weight:bold;">
+                                        الإجمالي بالحروف:
+                                        <span style="font-weight:normal; margin-right:5px;">
+                                            <t t-esc="doc.amount_text"/>
+                                        </span>
+                                    </td>
+                                    <td style="border:1px solid #000; padding:8px; text-align:center; font-weight:bold;font-size: 16px">
+<!--                                        <t t-esc="'{:,.2f}'.format(doc.total_amount)"/>-->
+                                        <t t-esc="doc.total_amount"/>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <div class="row mt-5 mb-5"
+                             style="text-align: center; border-top: 1px solid #ccc; padding-top: 20px;">
+                            <div class="col-12">
+                                <p style="font-family: 'Arial', sans-serif; font-size: 14px; color: #333; line-height: 1.6;">
+                                    <strong>تفضلوا بقبول فائق الاحترام والتقدير،،</strong>
+                                    <br/>
+                                    <span style="font-size: 14px; font-weight: bold; color: #2c3e50;">
+                                        ولكم منا جزيل الشكر على حسن تعاونكم معنا.
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
+
+                        <div style="margin-top:100px;">
+                            <table class="table table-borderless" style="width:100%; margin-bottom: 0;margin-top:20px">
+                                <tbody>
+                                    <tr>
+                                        <td style="text-align:center; border: 0 !important;">
+                                            _______________________
+                                            <br/>
+                                            <strong>الشؤون المالية</strong>
+                                        </td>
+
+                                        <td style="text-align:center; border: 0 !important;">
+                                            _______________________
+                                            <br/>
+                                            <strong>المدير العام</strong>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </t>
+            </t>
+        </t>
+    </template>
+
+
+    <record id="paperformat_salary_bank_report" model="report.paperformat">
+        <field name="name">Salary Bank Report A4</field>
+        <field name="default" eval="True"/>
+        <field name="format">A4</field>
+        <field name="page_height">0</field>
+        <field name="page_width">0</field>
+        <field name="orientation">Portrait</field>
+        <field name="margin_top">45</field>
+        <field name="margin_bottom">20</field>
+        <field name="margin_left">7</field>
+        <field name="margin_right">7</field>
+        <field name="header_line" eval="False"/>
+        <field name="header_spacing">40</field>
+        <field name="dpi">90</field>
+    </record>
+
+    <record id="action_report_cheque_batch" model="ir.actions.report">
+        <field name="name">حافظة مرتبات</field>
+        <field name="model">cheque.batch</field>
+        <field name="report_type">qweb-pdf</field>
+
+        <field name="report_name">payroll_cheque_batch.cheque_report_template</field>
+        <field name="report_file">payroll_cheque_batch.cheque_report_template</field>
+
+        <field name="binding_model_id" ref="model_cheque_batch"/>
+        <field name="binding_type">report</field>
+        <field name="paperformat_id" ref="paperformat_salary_bank_report"/>
+    </record>
+
+</odoo>

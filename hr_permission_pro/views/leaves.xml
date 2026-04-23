@@ -17,7 +17,7 @@
                         type="object"
                         string="HR Approve"
                         class="btn-success"
-                        groups="hr_holidays.group_hr_holidays_user"
+                        groups="aldaleel_attendance_policy.group_hr_payroll_user_custom"
                         invisible="state != 'hr_approve'"/>
             </xpath>
         </field>

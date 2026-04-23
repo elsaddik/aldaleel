@@ -29,10 +29,10 @@ class HrLeave(models.Model):
         res = super()._get_next_states_by_state()
 
         res.update({
-            'confirm': {'manager_approve': True},  # البداية
+            'confirm': {'manager_approve': True},
             'manager_approve': {'hr_approve': True},
             'hr_approve': {'gm_approve': True},
-            'gm_approve': {'validate': True},  # النهاية
+            'gm_approve': {'validate': True},
         })
 
         return res
@@ -52,7 +52,7 @@ class HrLeave(models.Model):
 
             # 2️⃣ HR
             if leave.state == 'hr_approve':
-                if not user.has_group('hr_holidays.group_hr_holidays_user'):
+                if not user.has_group('aldaleel_attendance_policy.group_hr_payroll_user_custom'):
                     raise UserError("Only HR can approve")
 
                 leave.state = 'gm_approve'

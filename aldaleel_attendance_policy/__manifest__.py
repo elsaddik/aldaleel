@@ -12,6 +12,7 @@
     'data': [
         'security/security.xml',  # 1. عرف المجموعات أولاً
         'security/ir.model.access.csv',  # 2. أعطِ الصلاحيات للمجموعات
+        'security/rules.xml',  # 2. أعطِ الصلاحيات للمجموعات
         'views/attendance_policy_views.xml',
         'views/attendance_penalty_views.xml',
         'views/hr.xml',

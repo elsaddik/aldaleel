@@ -1,3 +1,6 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_penalty,access_penalty,model_bank_attendance_penalty,base.group_user,1,1,1,1
 access_policy,access_policy,model_bank_attendance_policy,base.group_system,1,1,1,1
+access_limited_res_partner,limited.res.partner,base.model_res_partner,aldaleel_attendance_policy.group_limited_user,1,0,0,0
+access_limited_hr_employee,limited.hr.employee,hr.model_hr_employee,aldaleel_attendance_policy.group_limited_user,1,0,0,0
+access_limited_hr_employee,limited.project.task,project.model_project_task,aldaleel_attendance_policy.group_limited_user,1,0,0,0

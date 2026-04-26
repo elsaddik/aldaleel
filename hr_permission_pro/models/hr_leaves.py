@@ -1,6 +1,7 @@
 from odoo import models, fields, api, _
-from odoo.exceptions import UserError
-
+from odoo.exceptions import UserError,ValidationError
+import calendar
+from datetime import date
 
 class HrLeave(models.Model):
     _inherit = 'hr.leave'
@@ -15,6 +16,57 @@ class HrLeave(models.Model):
         'hr_approve': 'cascade',
         'gm_approve': 'cascade',
     })
+
+
+
+    @api.constrains('holiday_status_id', 'employee_id', 'request_date_from')
+    def check_limit_permission(self):
+        for rec in self:
+            if not rec.request_date_from:
+                continue
+
+            year = rec.request_date_from.year
+            month = rec.request_date_from.month
+            last_day = calendar.monthrange(year, month)[1]
+
+            date_from = date(year, month, 1)
+            date_to = date(year, month, last_day)
+
+            # ----------------------------------
+            # 1. Permissions (hour-based)
+            # ----------------------------------
+            if rec.holiday_status_id.request_unit == 'hour':
+                count = self.env['hr.leave'].search_count([
+                    ('employee_id', '=', rec.employee_id.id),
+                    ('holiday_status_id.request_unit', '=', 'hour'),
+                    ('request_date_from', '>=', date_from),
+                    ('request_date_from', '<=', date_to),
+                    ('id', '!=', rec.id),
+                ])
+
+                if count >= 3:
+                    raise ValidationError(
+                        f"{rec.employee_id.name} cannot take more than 3 permissions this month"
+                    )
+
+            # ----------------------------------
+            # 2. Urgent leaves (عارضة)
+            # ----------------------------------
+            URGENT_TYPE_ID = 87  # الأفضل تجيبه بـ XML ID مش رقم ثابت
+
+            if rec.holiday_status_id.id == URGENT_TYPE_ID:
+                count_urgent = self.env['hr.leave'].search_count([
+                    ('employee_id', '=', rec.employee_id.id),
+                    ('holiday_status_id', '=', URGENT_TYPE_ID),
+                    ('request_date_from', '>=', date_from),
+                    ('request_date_from', '<=', date_to),
+                    ('id', '!=', rec.id),
+                ])
+
+                if count_urgent >= 3:
+                    raise ValidationError(
+                        f"{rec.employee_id.name} cannot take more than 3 urgent leaves this month"
+                    )
 
     def action_submit_for_approval(self):
         for leave in self:

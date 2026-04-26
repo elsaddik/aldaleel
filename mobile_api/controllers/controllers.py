@@ -92,7 +92,7 @@ class HrMobileAPI(http.Controller):
 
                 return self._response({
                     "token": token,
-                    "employee_id": employee.id if employee else None,
+                    "employee_id": employee.device_id if employee else None,
                     "user_id": user.id,
                     "name": employee.name if employee else user.name,
                     "job": employee.job_title or ""

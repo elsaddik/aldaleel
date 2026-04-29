@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+<!--    <record id="view_task_tree_hide_create_for_group" model="ir.ui.view">-->
+<!--        <field name="name">project.task.tree.hide.create</field>-->
+<!--        <field name="model">project.task</field>-->
+<!--        <field name="inherit_id" ref="project_todo.project_task_view_todo_form"/>-->
+<!--&lt;!&ndash;        <field name="groups_id" eval="[(4, ref('aldaleel_attendance_policy.group_department_manger_user'))]"/>&ndash;&gt;-->
+<!--        <field name="arch" type="xml">-->
+<!--            <xpath expr="//field[@name='user_ids']" position="attributes">-->
+<!--                <attribute name="domain">[('employee_ids.parent_id.user_id', '=', uid)]</attribute>-->
+
+<!--            </xpath>-->
+<!--        </field>-->
+<!--    </record>-->
+
+</odoo>

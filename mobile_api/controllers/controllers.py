@@ -103,9 +103,10 @@ class HrMobileAPI(http.Controller):
         except Exception as e:
             _logger.error(f"Login Error: {str(e)}")
             return self._response(success=False, message="An internal error occurred", status=500)
-    # ==========================================
-    # 2. Leaves with Pagination (سجل الإجازات)
-    # ==========================================
+
+
+
+
     @http.route('/api/v1/leaves', type='http', auth='none', methods=['GET'], csrf=False)
     def get_leaves(self, **kwargs):
         user, error = self._verify_token()
@@ -143,37 +144,132 @@ class HrMobileAPI(http.Controller):
             "records": leave_data
         })
 
+    @http.route('/api/v1/public-holidays', type='http', auth='none', methods=['GET'], csrf=False)
+    def get_public_holidays(self, **kwargs):
+        user, error = self._verify_token()
+        if error:
+            return self._response(success=False, message=error, status=401)
+
+        # Pagination
+        page = int(kwargs.get('page', 1))
+        limit = int(kwargs.get('limit', 10))
+        offset = (page - 1) * limit
+
+        # نجيب employee عشان نحدد الـ calendar بتاعه
+        employee = request.env['hr.employee'].sudo().search([('user_id', '=', user)], limit=1)
+
+        # لو عايز holidays حسب calendar بتاع الموظف
+        calendar = employee.resource_calendar_id
+
+        domain = [
+            ('resource_id', '=', False),  # دي معناها public (مش مربوط بموظف)
+            ('calendar_id', '=', calendar.id)
+        ]
+
+        holidays_model = request.env['resource.calendar.leaves'].sudo()
+
+        total_count = holidays_model.search_count(domain)
+        holidays = holidays_model.search(domain, limit=limit, offset=offset, order='date_from desc')
+
+        holiday_data = []
+        for holiday in holidays:
+            holiday_data.append({
+                "id": holiday.id,
+                "name": holiday.name,
+                "from": str(holiday.date_from),
+                "to": str(holiday.date_to),
+                "calendar": holiday.calendar_id.name,
+            })
+
+        return self._response({
+            "total_records": total_count,
+            "total_pages": (total_count + limit - 1) // limit,
+            "current_page": page,
+            "records": holiday_data
+        })
+
     # ==========================================
     # 3. Leave Balance (رصيد الإجازات)
     # ==========================================
     @http.route('/api/v1/leaves/balance', type='http', auth='none', methods=['GET'], csrf=False)
     def get_leave_balance(self, **kwargs):
         user, error = self._verify_token()
-        if error: return self._response(success=False, message=error, status=401)
-        _logger.info('user: %s', user)
+        if error:
+            return self._response(success=False, message=error, status=401)
+
         employee = request.env['hr.employee'].sudo().search([('user_id', '=', user)], limit=1)
-        _logger.info('employee: %s', employee)
         leave_types = request.env['hr.leave.type'].sudo().search([])
 
         balances = []
+
+        # 🔥 المتغيرات المجمعة
+        total_sum = 0
+        used_sum = 0
+        remaining_sum = 0
 
         for l_type in leave_types:
             stats = l_type.get_allocation_data(employee)
 
             if employee in stats and stats[employee]:
-                # ناخد أول عنصر
                 data_tuple = stats[employee][0]
-
-                # data في index 1
                 data = data_tuple[1]
 
+                total = data.get('max_leaves', 0)
+                used = data.get('leaves_taken', 0)
+                remaining = data.get('virtual_remaining_leaves', 0)
+
                 balances.append({
-                    "name": data_tuple[0],  # 'Paid Time Off'
-                    "total": data.get('max_leaves', 0),
-                    "used": data.get('leaves_taken', 0),
-                    "remaining": data.get('virtual_remaining_leaves', 0),
+                    "id": l_type.id,  # ✅ إضافة ID
+                    "name": data_tuple[0],
+                    "total": total,
+                    "used": used,
+                    "remaining": remaining,
                 })
-        return self._response({"balances": balances})
+
+                # 🔥 التجميع
+                total_sum += total
+                used_sum += used
+                remaining_sum += remaining
+
+        # ✅ response النهائي
+        return self._response({
+            "balances": balances,
+            "summary": {
+                "total": total_sum,
+                "used": used_sum,
+                "remaining": remaining_sum,
+            }
+        })
+
+
+    # @http.route('/api/v1/leaves/balance', type='http', auth='none', methods=['GET'], csrf=False)
+    # def get_leave_balance(self, **kwargs):
+    #     user, error = self._verify_token()
+    #     if error: return self._response(success=False, message=error, status=401)
+    #     _logger.info('user: %s', user)
+    #     employee = request.env['hr.employee'].sudo().search([('user_id', '=', user)], limit=1)
+    #     _logger.info('employee: %s', employee)
+    #     leave_types = request.env['hr.leave.type'].sudo().search([])
+    #
+    #     balances = []
+    #
+    #     for l_type in leave_types:
+    #         stats = l_type.get_allocation_data(employee)
+    #
+    #         if employee in stats and stats[employee]:
+    #             # ناخد أول عنصر
+    #             data_tuple = stats[employee][0]
+    #
+    #             # data في index 1
+    #             data = data_tuple[1]
+    #
+    #             balances.append({
+    #                 "name": data_tuple[0],  # 'Paid Time Off'
+    #                 "total": data.get('max_leaves', 0),
+    #                 "used": data.get('leaves_taken', 0),
+    #                 "remaining": data.get('virtual_remaining_leaves', 0),
+    #             })
+    #     return self._response({"balances": balances})
 
     @http.route('/api/v1/leaves/apply', type='http', auth='none', methods=['POST'], csrf=False)
     def api_apply_leave(self, **kwargs):
@@ -305,38 +401,6 @@ class HrMobileAPI(http.Controller):
             "current_page": page,
             "records": slip_data
         })
-
-    # ==========================================
-    # @http.route('/api/v1/payslips', type='http', auth='none', methods=['GET'], csrf=False)
-    # def get_payslips(self, **kwargs):
-    #     user, error = self._verify_token()
-    #     if error: return self._response(success=False, message=error, status=401)
-    #
-    #     page = int(kwargs.get('page', 1))
-    #     limit = int(kwargs.get('limit', 10))
-    #     offset = (page - 1) * limit
-    #
-    #     employee = request.env['hr.employee'].sudo().search([('user_id', '=', user)], limit=1)
-    #     domain = [('employee_id', '=', employee.id), ('state', '=', 'validated')]
-    #     print('user',user)
-    #     total_count = request.env['hr.payslip'].sudo().search_count(domain)
-    #     slips = request.env['hr.payslip'].sudo().search(domain, limit=limit, offset=offset, order='date_from desc')
-    #
-    #     slip_data = []
-    #     for slip in slips:
-    #         slip_data.append({
-    #             "id": slip.id,
-    #             "number": slip.name,
-    #             "amount": slip.amount,
-    #             "period": f"{slip.date_from} to {slip.date_to}",
-    #         })
-    #
-    #     return self._response({
-    #         "total_records": total_count,
-    #         "total_pages": (total_count + limit - 1) // limit,
-    #         "current_page": page,
-    #         "records": slip_data
-    #     })
 
 
     @http.route('/api/v1/permission/apply', type='http', auth='none', methods=['POST'], csrf=False)

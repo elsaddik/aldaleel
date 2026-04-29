@@ -10,15 +10,15 @@
 
     ],
     'data': [
-        'security/security.xml',  # 1. عرف المجموعات أولاً
-        'security/ir.model.access.csv',  # 2. أعطِ الصلاحيات للمجموعات
-        'security/rules.xml',  # 2. أعطِ الصلاحيات للمجموعات
+        'security/security.xml',
+        'security/ir.model.access.csv',
+        'security/rules.xml',  
         'views/attendance_policy_views.xml',
         'views/attendance_penalty_views.xml',
         'views/hr.xml',
         'views/payslip.xml',
+        'views/task.xml',
         'views/menu.xml',
-
         'data/cron.xml',
 
     ],

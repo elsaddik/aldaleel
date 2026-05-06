@@ -2,9 +2,12 @@ import json
 import logging
 import jwt
 import datetime
+
+
+
 from odoo import http, fields, _
 from odoo.http import request, Response
-import base64
+from ..service.service import Attachment
 
 from datetime import date, datetime, timedelta
 
@@ -107,86 +110,89 @@ class HrMobileAPI(http.Controller):
 
 
 
-    @http.route('/api/v1/leaves/upload_attach', type='http', auth='none', methods=['POST'], csrf=False)
-    def upload_leave_attachment(self, **kwargs):
-        user, error = self._verify_token()
-        if error:
-            return self._response(success=False, message=error, status=401)
+    # # @http.route('/api/v1/leaves/upload_attach', type='http', auth='none', methods=['POST'], csrf=False)
+    # def upload_leave_attachment(self, **kwargs):
+    #     user, error = self._verify_token()
+    #     if error:
+    #         return self._response(success=False, message=error, status=401)
+    #
+    #     employee = request.env['hr.employee'].sudo().search([
+    #         ('user_id', '=', user)
+    #     ], limit=1)
+    #
+    #     if not employee:
+    #         return self._response(success=False, message="Employee not found", status=404)
+    #
+    #     leave_id = kwargs.get('leave_id')
+    #     if not leave_id:
+    #         return self._response(success=False, message="leave_id is required", status=400)
+    #
+    #     try:
+    #         leave_id = int(leave_id)
+    #     except:
+    #         return self._response(success=False, message="Invalid leave_id", status=400)
+    #
+    #     leave = request.env['hr.leave'].sudo().search([
+    #         ('id', '=', leave_id),
+    #         ('employee_id', '=', employee.id)
+    #     ], limit=1)
+    #
+    #     if not leave:
+    #         return self._response(success=False, message="Leave not found or not متعلق بيك", status=404)
+    #
+    #
+    #     # if leave.state not in ['draft', 'confirm']:
+    #     #     return self._response(success=False, message="Cannot upload attachment بعد الموافقة", status=400)
+    #
+    #
+    #     uploaded_file = request.httprequest.files.get('file')
+    #
+    #     if not uploaded_file:
+    #         return self._response(success=False, message="File is required", status=400)
+    #
+    #     file_name = uploaded_file.filename
+    #     file_content = uploaded_file.read()
+    #     mimetype = uploaded_file.mimetype
+    #
+    #
+    #     allowed_types = [
+    #         'application/pdf',
+    #         'image/jpeg',
+    #         'image/png',
+    #     ]
+    #
+    #     if mimetype not in allowed_types:
+    #         return self._response(
+    #             success=False,
+    #             message="Only PDF, JPG, PNG files are allowed",
+    #             status=400
+    #         )
+    #
+    #
+    #     if len(file_content) > 5 * 1024 * 1024:
+    #         return self._response(
+    #             success=False,
+    #             message="File too large (max 5MB)",
+    #             status=400
+    #         )
+    #
+    #
+    #     encoded_file = base64.b64encode(file_content)
+    #
+    #     attachment = request.env['ir.attachment'].sudo().create({
+    #         'name': file_name,
+    #         'datas': encoded_file,
+    #         'res_model': 'hr.leave',
+    #         'res_id': leave.id,
+    #         'mimetype': mimetype,
+    #     })
+    #     return self._response({
+    #         "message": "Attachment uploaded successfully",
+    #         "attachment_id": attachment.id
+    #     })
 
-        employee = request.env['hr.employee'].sudo().search([
-            ('user_id', '=', user)
-        ], limit=1)
-
-        if not employee:
-            return self._response(success=False, message="Employee not found", status=404)
-
-        leave_id = kwargs.get('leave_id')
-        if not leave_id:
-            return self._response(success=False, message="leave_id is required", status=400)
-
-        try:
-            leave_id = int(leave_id)
-        except:
-            return self._response(success=False, message="Invalid leave_id", status=400)
-
-        leave = request.env['hr.leave'].sudo().search([
-            ('id', '=', leave_id),
-            ('employee_id', '=', employee.id)
-        ], limit=1)
-
-        if not leave:
-            return self._response(success=False, message="Leave not found or not متعلق بيك", status=404)
 
 
-        # if leave.state not in ['draft', 'confirm']:
-        #     return self._response(success=False, message="Cannot upload attachment بعد الموافقة", status=400)
-
-
-        uploaded_file = request.httprequest.files.get('file')
-
-        if not uploaded_file:
-            return self._response(success=False, message="File is required", status=400)
-
-        file_name = uploaded_file.filename
-        file_content = uploaded_file.read()
-        mimetype = uploaded_file.mimetype
-
-
-        allowed_types = [
-            'application/pdf',
-            'image/jpeg',
-            'image/png',
-        ]
-
-        if mimetype not in allowed_types:
-            return self._response(
-                success=False,
-                message="Only PDF, JPG, PNG files are allowed",
-                status=400
-            )
-
-
-        if len(file_content) > 5 * 1024 * 1024:
-            return self._response(
-                success=False,
-                message="File too large (max 5MB)",
-                status=400
-            )
-
-
-        encoded_file = base64.b64encode(file_content)
-
-        attachment = request.env['ir.attachment'].sudo().create({
-            'name': file_name,
-            'datas': encoded_file,
-            'res_model': 'hr.leave',
-            'res_id': leave.id,
-            'mimetype': mimetype,
-        })
-        return self._response({
-            "message": "Attachment uploaded successfully",
-            "attachment_id": attachment.id
-        })
     @http.route('/api/v1/leaves', type='http', auth='none', methods=['GET'], csrf=False)
     def get_leaves(self, **kwargs):
         user, error = self._verify_token()
@@ -214,7 +220,7 @@ class HrMobileAPI(http.Controller):
                 "to": str(leave.date_to),
                 "days": leave.number_of_days,
                 "state": leave.state,
-                # "description": leave.name or ""
+
             })
 
         return self._response({
@@ -223,6 +229,7 @@ class HrMobileAPI(http.Controller):
             "current_page": page,
             "records": leave_data
         })
+
 
     @http.route('/api/v1/public-holidays', type='http', auth='none', methods=['GET'], csrf=False)
     def get_public_holidays(self, **kwargs):
@@ -338,56 +345,6 @@ class HrMobileAPI(http.Controller):
                 "remaining": remaining_sum,
             }
         })
-    # @http.route('/api/v1/leaves/balance', type='http', auth='none', methods=['GET'], csrf=False)
-    # def get_leave_balance(self, **kwargs):
-    #     user, error = self._verify_token()
-    #     if error:
-    #         return self._response(success=False, message=error, status=401)
-    #
-    #     employee = request.env['hr.employee'].sudo().search([('user_id', '=', user)], limit=1)
-    #     leave_types = request.env['hr.leave.type'].sudo().search([])
-    #
-    #     balances = []
-    #
-    #     # 🔥 المتغيرات المجمعة
-    #     total_sum = 0
-    #     used_sum = 0
-    #     remaining_sum = 0
-    #
-    #     for l_type in leave_types:
-    #         stats = l_type.get_allocation_data(employee)
-    #
-    #         if employee in stats and stats[employee]:
-    #             data_tuple = stats[employee][0]
-    #             data = data_tuple[1]
-    #
-    #             total = data.get('max_leaves', 0)
-    #             used = data.get('leaves_taken', 0)
-    #             remaining = data.get('virtual_remaining_leaves', 0)
-    #
-    #             balances.append({
-    #                 "id": l_type.id,  # ✅ إضافة ID
-    #                 "name": data_tuple[0],
-    #                 "total": total,
-    #                 "used": used,
-    #                 "remaining": remaining,
-    #             })
-    #
-    #             # 🔥 التجميع
-    #             total_sum += total
-    #             used_sum += used
-    #             remaining_sum += remaining
-    #     default_names = {1: "Paid Time Off", 2: "Sick Leave", 3: "Emergency Leave"}
-    #     # ✅ response النهائي
-    #     return self._response({
-    #         "balances": balances,
-    #         "summary": {
-    #             "total": total_sum,
-    #             "used": used_sum,
-    #             "remaining": remaining_sum,
-    #         }
-    #     })
-    #
 
 
     @http.route('/api/v1/leaves/apply', type='http', auth='none', methods=['POST'], csrf=False)
@@ -398,6 +355,7 @@ class HrMobileAPI(http.Controller):
         data = self._get_json_data()
         date_from = data.get('date_from')
         date_to = data.get('date_to')
+
         holiday_status_id = data.get('leave_type_id')
         date_from = datetime.strptime(date_from, "%Y-%m-%d %H:%M:%S").date()
         date_to = datetime.strptime(date_to, "%Y-%m-%d %H:%M:%S").date()
@@ -429,13 +387,31 @@ class HrMobileAPI(http.Controller):
                 'name': data.get('reason', ''),
             }
 
-            # نستخدم sudo() لمرة واحدة عند الإنشاء فقط
-            new_leave = user_env['hr.leave'].sudo().create(leave_vals)
 
-            # التأكيد (Confirm)
-            # ملحوظة: في Odoo 19 بعض الإعدادات قد تجعل create تطلق confirm تلقائياً
-            # if new_leave.state == 'draft':
-            #     new_leave.action_confirm()
+            new_leave = user_env['hr.leave'].sudo().create(leave_vals)
+            file_data = data.get('file_data')
+            file_name = data.get('file_name')
+            file_mimetype = data.get('file_mimetype')
+            print(file_mimetype)
+            attach = Attachment()
+
+            if file_data:
+                attachment, error = attach.create_attachment(
+                    request.env,
+                    'hr.leave',
+                    new_leave.id,
+                    file_name,
+                    file_data,
+                    file_mimetype
+                )
+
+                if error:
+                    return self._response(
+                        success=False,
+                        message=error,
+                        status=400
+                    )
+
 
             return self._response(data={"id": new_leave.id}, message="تم تقديم الطلب بنجاح", status=201)
 

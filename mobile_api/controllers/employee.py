@@ -6,6 +6,7 @@ from odoo import http, fields, _
 from odoo.http import request, Response
 from datetime import date,datetime, time, timedelta
 import base64
+from ..service.service import Attachment
 
 
 
@@ -217,54 +218,6 @@ class HrMobileAPIEmployee(http.Controller):
         })
 
 
-    # @http.route('/api/v1/profile/upload_cv', type='http', auth='none', methods=['POST'], csrf=False)
-    # def upload_cv(self, **kwargs):
-    #     user, error = self._verify_token()
-    #     if error:
-    #         return self._response(success=False, message=error, status=401)
-    #
-    #     employee = request.env['hr.employee'].sudo().search([('user_id', '=', user)], limit=1)
-    #     if not employee:
-    #         return self._response(success=False, message="Employee not found", status=404)
-    #
-    #     file_content = kwargs.get('file')
-    #     file_name = kwargs.get('file_name')
-    #     mimetype = kwargs.get('mimetype', 'application/octet-stream')
-    #
-    #
-    #     if not file_content or not file_name:
-    #         return self._response(success=False, message="file and file_name are required", status=400)
-    #
-    #     try:
-    #         import base64
-    #         base64.b64decode(file_content)
-    #     except Exception:
-    #         return self._response(success=False, message="Invalid base64 file", status=400)
-    #
-    #
-    #     allowed_types = ['application/pdf', 'application/msword',
-    #                      'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
-    #     if mimetype not in allowed_types:
-    #         return self._response(success=False, message="Only PDF or Word files allowed", status=400)
-    #
-    #
-    #     if len(file_content) > 5_000_000:
-    #         return self._response(success=False, message="File too large", status=400)
-    #
-    #
-    #     attachment = request.env['ir.attachment'].sudo().create({
-    #         'name': 'CV',
-    #         'datas': file_content,
-    #         'res_model': 'hr.employee',
-    #         'res_id': employee.id,
-    #         'mimetype': mimetype,
-    #     })
-    #
-    #     return self._response({
-    #         "message": "CV uploaded successfully",
-    #         "attachment_id": attachment.id
-    #     })
-
     @http.route('/api/v1/permission/apply', type='http', auth='none', methods=['POST'], csrf=False)
     def api_apply_permission(self, **kwargs):
         user_id, error = self._verify_token()
@@ -272,7 +225,6 @@ class HrMobileAPIEmployee(http.Controller):
             return self._response(success=False, message=error, status=401)
 
         data = self._get_json_data()
-
 
         permission_type = data.get('permission_type')
         logistic = data.get('logistic')
@@ -325,6 +277,23 @@ class HrMobileAPIEmployee(http.Controller):
 
             # Submit تلقائي
             permission.action_submit()
+
+            file_data = data.get('file_data')
+            file_name = data.get('file_name')
+            file_mimetype = data.get('file_mimetype')
+            attach= Attachment()
+            if file_data:
+                attachment, error = attach.create_attachment(
+                    request.env,
+                    'hr.permission',
+                    permission.id,
+                    file_name,
+                    file_data,
+                    file_mimetype
+                )
+
+                if error:
+                    return self._response(success=False, message=error, status=400)
 
             return self._response(
                 data={

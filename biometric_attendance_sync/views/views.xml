@@ -4,12 +4,18 @@
             <field name="model">hr.employee</field>
             <field name="inherit_id" ref="hr.view_employee_form"/>
             <field name="arch" type="xml">
-
-
                 <xpath expr="//sheet//group" position="inside">
                     <field name="device_id" groups="base.group_system"/>
                     <field name="device_make" groups="base.group_system"/>
-
+<!--                    <field name="monday"/>-->
+<!--                    <field name="tuesday"/>-->
+<!--                    <field name="wednesday"/>-->
+<!--                    <field name="thursday"/>-->
+<!--                    <field name="friday"/>-->
+<!--                    <field name="saturday"/>-->
+<!--                    <field name="sunday"/>-->
+<!--                    <field name="date_from"/>-->
+<!--                    <field name="date_to"/>-->
                 </xpath>
 
             </field>
@@ -42,19 +48,19 @@
 <!--    </record>-->
 
 
-    <record id="view_attendance_form_inherit_device" model="ir.ui.view">
-        <field name="name">hr.attendance.form.inherit.device</field>
-        <field name="model">hr.attendance</field>
-        <field name="inherit_id" ref="hr_attendance.hr_attendance_view_form"/>
-        <field name="arch" type="xml">
+<!--    <record id="view_attendance_form_inherit_device" model="ir.ui.view">-->
+<!--        <field name="name">hr.attendance.form.inherit.device</field>-->
+<!--        <field name="model">hr.attendance</field>-->
+<!--        <field name="inherit_id" ref="hr_attendance.hr_attendance_view_form"/>-->
+<!--        <field name="arch" type="xml">-->
 
-            <xpath expr="//sheet//group" position="inside">
-                <field name="device_id"/>
+<!--            <xpath expr="//sheet//group" position="inside">-->
+<!--&lt;!&ndash;                <field name="device_id"/>&ndash;&gt;-->
 
-                <field name="source"/>
-            </xpath>
+<!--                <field name="source"/>-->
+<!--            </xpath>-->
 
-        </field>
-    </record>
+<!--        </field>-->
+<!--    </record>-->
 </odoo>
 

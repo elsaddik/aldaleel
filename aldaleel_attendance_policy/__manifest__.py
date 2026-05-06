@@ -6,7 +6,7 @@
         'hr',
         'hr_attendance',
         'hr_payroll',
-        'hr_payroll_account',
+        'hr_payroll_account','project'
 
     ],
     'data': [

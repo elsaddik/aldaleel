@@ -4,7 +4,7 @@ import jwt
 import datetime
 from odoo import http, fields, _
 from odoo.http import request, Response
-
+import base64
 
 from datetime import date, datetime, timedelta
 
@@ -52,8 +52,9 @@ class HrMobileAPI(http.Controller):
     # ==========================================
     @http.route('/api/v1/login', type='http', auth='none', methods=['POST'], csrf=False)
     def login(self, **kwargs):
-        # استخراج البيانات من الـ Request Body
+
         data = self._get_json_data()
+        print(data)
         db = data.get('db')
         login = data.get('login')
         password = data.get('password')
@@ -83,10 +84,10 @@ class HrMobileAPI(http.Controller):
                     'iat': datetime.utcnow(),
                 }
 
-                # إنشاء التوكن
+
                 token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')
                 print(token)
-                # تأكد من تحويل التوكن لـ string إذا كنت تستخدم إصدار قديم من PyJWT
+
                 if isinstance(token, bytes):
                     token = token.decode('utf-8')
 
@@ -95,7 +96,7 @@ class HrMobileAPI(http.Controller):
                     "employee_id": employee.device_id if employee else None,
                     "user_id": user.id,
                     "name": employee.name if employee else user.name,
-                    "job": employee.job_title or ""
+                    "job": employee.job_title if employee else  ""
                 }, message="Login successful")
 
             return self._response(success=False, message="Invalid credentials", status=401)
@@ -106,7 +107,86 @@ class HrMobileAPI(http.Controller):
 
 
 
+    @http.route('/api/v1/leaves/upload_attach', type='http', auth='none', methods=['POST'], csrf=False)
+    def upload_leave_attachment(self, **kwargs):
+        user, error = self._verify_token()
+        if error:
+            return self._response(success=False, message=error, status=401)
 
+        employee = request.env['hr.employee'].sudo().search([
+            ('user_id', '=', user)
+        ], limit=1)
+
+        if not employee:
+            return self._response(success=False, message="Employee not found", status=404)
+
+        leave_id = kwargs.get('leave_id')
+        if not leave_id:
+            return self._response(success=False, message="leave_id is required", status=400)
+
+        try:
+            leave_id = int(leave_id)
+        except:
+            return self._response(success=False, message="Invalid leave_id", status=400)
+
+        leave = request.env['hr.leave'].sudo().search([
+            ('id', '=', leave_id),
+            ('employee_id', '=', employee.id)
+        ], limit=1)
+
+        if not leave:
+            return self._response(success=False, message="Leave not found or not متعلق بيك", status=404)
+
+
+        # if leave.state not in ['draft', 'confirm']:
+        #     return self._response(success=False, message="Cannot upload attachment بعد الموافقة", status=400)
+
+
+        uploaded_file = request.httprequest.files.get('file')
+
+        if not uploaded_file:
+            return self._response(success=False, message="File is required", status=400)
+
+        file_name = uploaded_file.filename
+        file_content = uploaded_file.read()
+        mimetype = uploaded_file.mimetype
+
+
+        allowed_types = [
+            'application/pdf',
+            'image/jpeg',
+            'image/png',
+        ]
+
+        if mimetype not in allowed_types:
+            return self._response(
+                success=False,
+                message="Only PDF, JPG, PNG files are allowed",
+                status=400
+            )
+
+
+        if len(file_content) > 5 * 1024 * 1024:
+            return self._response(
+                success=False,
+                message="File too large (max 5MB)",
+                status=400
+            )
+
+
+        encoded_file = base64.b64encode(file_content)
+
+        attachment = request.env['ir.attachment'].sudo().create({
+            'name': file_name,
+            'datas': encoded_file,
+            'res_model': 'hr.leave',
+            'res_id': leave.id,
+            'mimetype': mimetype,
+        })
+        return self._response({
+            "message": "Attachment uploaded successfully",
+            "attachment_id": attachment.id
+        })
     @http.route('/api/v1/leaves', type='http', auth='none', methods=['GET'], csrf=False)
     def get_leaves(self, **kwargs):
         user, error = self._verify_token()
@@ -155,14 +235,14 @@ class HrMobileAPI(http.Controller):
         limit = int(kwargs.get('limit', 10))
         offset = (page - 1) * limit
 
-        # نجيب employee عشان نحدد الـ calendar بتاعه
+
         employee = request.env['hr.employee'].sudo().search([('user_id', '=', user)], limit=1)
 
-        # لو عايز holidays حسب calendar بتاع الموظف
+
         calendar = employee.resource_calendar_id
 
         domain = [
-            ('resource_id', '=', False),  # دي معناها public (مش مربوط بموظف)
+            ('resource_id', '=', False),  
             ('calendar_id', '=', calendar.id)
         ]
 
@@ -188,6 +268,7 @@ class HrMobileAPI(http.Controller):
             "records": holiday_data
         })
 
+
     # ==========================================
     # 3. Leave Balance (رصيد الإجازات)
     # ==========================================
@@ -206,6 +287,9 @@ class HrMobileAPI(http.Controller):
         total_sum = 0
         used_sum = 0
         remaining_sum = 0
+
+        required_ids = [1, 2, 3]
+        found_ids = []
 
         for l_type in leave_types:
             stats = l_type.get_allocation_data(employee)
@@ -226,10 +310,24 @@ class HrMobileAPI(http.Controller):
                     "remaining": remaining,
                 })
 
+                found_ids.append(l_type.id)
+
                 # 🔥 التجميع
                 total_sum += total
                 used_sum += used
                 remaining_sum += remaining
+
+        default_names = {1: "Paid Time Off", 2: "Sick Leave", 3: "Emergency Leave"}
+
+        for req_id in required_ids:
+            if req_id not in found_ids:
+                balances.append({
+                    "id": req_id,
+                    "name": default_names.get(req_id, "Other"),
+                    "total": 0,
+                    "used": 0,
+                    "remaining": 0,
+                })
 
         # ✅ response النهائي
         return self._response({
@@ -240,36 +338,57 @@ class HrMobileAPI(http.Controller):
                 "remaining": remaining_sum,
             }
         })
-
-
     # @http.route('/api/v1/leaves/balance', type='http', auth='none', methods=['GET'], csrf=False)
     # def get_leave_balance(self, **kwargs):
     #     user, error = self._verify_token()
-    #     if error: return self._response(success=False, message=error, status=401)
-    #     _logger.info('user: %s', user)
+    #     if error:
+    #         return self._response(success=False, message=error, status=401)
+    #
     #     employee = request.env['hr.employee'].sudo().search([('user_id', '=', user)], limit=1)
-    #     _logger.info('employee: %s', employee)
     #     leave_types = request.env['hr.leave.type'].sudo().search([])
     #
     #     balances = []
+    #
+    #     # 🔥 المتغيرات المجمعة
+    #     total_sum = 0
+    #     used_sum = 0
+    #     remaining_sum = 0
     #
     #     for l_type in leave_types:
     #         stats = l_type.get_allocation_data(employee)
     #
     #         if employee in stats and stats[employee]:
-    #             # ناخد أول عنصر
     #             data_tuple = stats[employee][0]
-    #
-    #             # data في index 1
     #             data = data_tuple[1]
     #
+    #             total = data.get('max_leaves', 0)
+    #             used = data.get('leaves_taken', 0)
+    #             remaining = data.get('virtual_remaining_leaves', 0)
+    #
     #             balances.append({
-    #                 "name": data_tuple[0],  # 'Paid Time Off'
-    #                 "total": data.get('max_leaves', 0),
-    #                 "used": data.get('leaves_taken', 0),
-    #                 "remaining": data.get('virtual_remaining_leaves', 0),
+    #                 "id": l_type.id,  # ✅ إضافة ID
+    #                 "name": data_tuple[0],
+    #                 "total": total,
+    #                 "used": used,
+    #                 "remaining": remaining,
     #             })
-    #     return self._response({"balances": balances})
+    #
+    #             # 🔥 التجميع
+    #             total_sum += total
+    #             used_sum += used
+    #             remaining_sum += remaining
+    #     default_names = {1: "Paid Time Off", 2: "Sick Leave", 3: "Emergency Leave"}
+    #     # ✅ response النهائي
+    #     return self._response({
+    #         "balances": balances,
+    #         "summary": {
+    #             "total": total_sum,
+    #             "used": used_sum,
+    #             "remaining": remaining_sum,
+    #         }
+    #     })
+    #
+
 
     @http.route('/api/v1/leaves/apply', type='http', auth='none', methods=['POST'], csrf=False)
     def api_apply_leave(self, **kwargs):
@@ -403,78 +522,6 @@ class HrMobileAPI(http.Controller):
         })
 
 
-    @http.route('/api/v1/permission/apply', type='http', auth='none', methods=['POST'], csrf=False)
-    def api_apply_permission(self, **kwargs):
-        user_id, error = self._verify_token()
-        if error:
-            return self._response(success=False, message=error, status=401)
-
-        data = self._get_json_data()
-
-        date = data.get('date')
-        permission_type = data.get('permission_type')
-        time_from = data.get('time_from')
-        time_to = data.get('time_to')
-
-        try:
-            # تحويل التاريخ
-            date = datetime.strptime(date, "%Y-%m-%d").date()
-
-            user_env = request.env(user=user_id)
-
-            # الحصول على الموظف
-            employee = user_env['hr.employee'].sudo().search([
-                ('user_id', '=', user_id)
-            ], limit=1)
-
-            if not employee:
-                return self._response(success=False, message="الموظف غير موجود", status=404)
-
-            # =========================
-            # Check Overlap (زي الموديل)
-            # =========================
-            existing_permissions = user_env['hr.permission'].sudo().search([
-                ('employee_id', '=', employee.id),
-                ('date', '=', date),
-                ('state', 'in', ['approved', 'to_approve']),
-            ])
-
-            for p in existing_permissions:
-                if not (float(time_to) <= p.time_from or float(time_from) >= p.time_to):
-                    return self._response(
-                        success=False,
-                        message="يوجد إذن متداخل في نفس الوقت",
-                        status=400
-                    )
-
-            # =========================
-            # Create
-            # =========================
-            vals = {
-                'employee_id': employee.id,
-                'date': date,
-                'permission_type': permission_type,
-                'time_from': float(time_from),
-                'time_to': float(time_to),
-            }
-
-            permission = user_env['hr.permission'].sudo().create(vals)
-
-            # Submit تلقائي
-            permission.action_submit()
-
-            return self._response(
-                data={
-                    "id": permission.id,
-                    "state": permission.state,
-                    "duration": permission.duration
-                },
-                message="تم إنشاء الإذن بنجاح",
-                status=201
-            )
-
-        except Exception as e:
-            return self._response(success=False, message=str(e), status=400)
 
     @http.route('/api/v1/attendance', type='http', auth='none', methods=['GET'], csrf=False)
     def get_attendance(self, **kwargs):
@@ -579,3 +626,4 @@ class HrMobileAPI(http.Controller):
             return self._response({"loan_id": loan.id}, message="Loan request submitted")
         except Exception as e:
             return self._response(success=False, message=str(e), status=400)
+

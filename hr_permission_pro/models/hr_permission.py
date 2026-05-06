@@ -12,13 +12,13 @@ class HrPermission(models.Model):
     date = fields.Date(required=True)
 
     permission_type = fields.Selection([
-        # ('late', 'Late'),
-        # ('early', 'Early Leave'),
         ('mission', 'Mission')
-    ], required=True)
+    ] ,default='mission', required=True)
 
     time_from = fields.Float(required=True)
     time_to = fields.Float(required=True)
+    logistic = fields.Char()
+
 
     duration = fields.Float(compute="_compute_duration", store=True)
 

@@ -123,6 +123,7 @@ class HrPayslipInherit(models.Model):
     def compute_sheet(self):
         self = self.exists()
         print(self)
+
         for payslip in self:
             employee = payslip.employee_id
 
@@ -176,58 +177,22 @@ class HrPayslipInherit(models.Model):
 
         return super().compute_sheet()
 
-    # def compute_sheet(self):
-    #
-    #     for payslip in self:
-    #         print(payslip.id)
-    #         employee = payslip.employee_id
-    #
-    #         start = payslip.date_from
-    #         end = payslip.date_to
-    #
-    #         penalties = self.env['bank.attendance.penalty'].search([
-    #             ('employee_id', '=', employee.id),
-    #             ('period_end', '>=', start),
-    #             ('period_end', '<=', end),
-    #         ])
-    #
-    #         print("Penalties:", penalties)
-    #
-    #         total_absence = sum(penalties.mapped('absence_count'))
-    #         payslip.abs_count = total_absence
-    #
-    #         print("TOTAL ABSENCE:", total_absence)
-    #
-    #         input_type = self.env['hr.payslip.input.type'].search([
-    #             ('code', '=', 'ABS')
-    #         ], limit=1)
-    #         print(employee)
-    #         if not employee.contract_type_id:
-    #             raise UserError(_("you must select a contract type."))
-    #
-    #         # حذف القديم
-    #         lines=payslip.input_line_ids.filtered(
-    #             lambda l: l.input_type_id.code == 'ABS'
-    #         )
-    #         if lines:
-    #             lines.unlink()
-    #         # إضافة الجديد
-    #         if total_absence > 0 and input_type and employee.contract_type_id.include_in_payslip == True:
-    #             self.env['hr.payslip.input'].create({
-    #                 "payslip_id": payslip.id,
-    #                 "input_type_id": input_type.id,
-    #                 "amount": total_absence,
-    #                 "start_period": start,
-    #                 "end_period": end,
-    #             })
-    #         elif not employee.contract_type_id.include_in_payslip and payslip.add_deduct:
-    #             self.env['hr.payslip.input'].create({
-    #                 "payslip_id": payslip.id,
-    #                 "input_type_id": input_type.id,
-    #                 "amount": payslip.abs_count_to_add,
-    #                 "start_period": start,
-    #                 "end_period": end,
-    #             })
-    #
-    #     return super().compute_sheet()
-    #     # return res
+    def _notify_employee_to_payslip(self):
+        for rec in self:
+            employee_partner = rec.employee_id.user_id.partner_id.ids
+
+            if employee_partner:
+                rec.sudo().message_notify(
+                    partner_ids=employee_partner,
+                    # model_description=model_description,
+                    subject=_('Salary has generated'),
+                    body=_("Your payslip has been approved"),
+                    email_layout_xmlid="mail.mail_notification_layout",
+                    subtitles=[rec.display_name],
+                )
+
+    def action_payslip_done(self):
+            res =super().action_payslip_done()
+            self._notify_employee_to_payslip()
+            return res
+

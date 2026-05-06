@@ -19,7 +19,7 @@
         <field name="inherit_id" ref="hr_payroll.view_hr_payslip_form"/>
         <field name="arch" type="xml">
 
-            <!-- مثال: إضافة field جديد بعد name -->
+
             <xpath expr="//field[@name='struct_id']" position="after">
                 <field name="include_in_payslip" string="free employee" invisible="0"/>
                 <field name="abs_count" invisible="not include_in_payslip or not employee_id"/>
@@ -40,7 +40,7 @@
             <xpath expr="//button[@name='action_payslip_done']" position="replace">
                 <button string="Create Draft Entry" name="action_payslip_done" type="object"
                         invisible="state != 'account'  or not line_ids"
-                        groups="aldaleel_attendance_policy.group_accounting_user_custom" class="oe_highlight"
+                        groups="aldaleel_attendance_policy.group_accounting_user_custom,aldaleel_attendance_policy.group_hr_payroll_user_custom" class="oe_highlight"
                         context="{'payslip_generate_pdf': True}" confirm="Are you sure you want to proceed?"/>
             </xpath>
 
@@ -87,7 +87,7 @@
             <xpath expr="//list/header" position="replace">
                 <header>
                     <button string="Validate" name="action_validate" type="object" class="oe_highlight"
-                           groups="aldaleel_attendance_policy.group_general_manager,aldaleel_attendance_policy.group_accounting_user_custom"/>
+                           groups="aldaleel_attendance_policy.group_general_manager,aldaleel_attendance_policy.group_accounting_user_custom,aldaleel_attendance_policy.group_hr_payroll_user_custom"/>
                     <button string="Compute Sheet" name="compute_sheet" type="object" class="oe_highlight"
                             groups="aldaleel_attendance_policy.group_hr_payroll_user_custom,aldaleel_attendance_policy.group_accounting_user_custom,aldaleel_attendance_policy.group_general_manager"/>
                     <button string="Confirm" name="action_payslip_done" type="object" class="oe_highlight"

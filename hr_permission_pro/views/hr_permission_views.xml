@@ -6,6 +6,7 @@
         <field name="arch" type="xml">
             <list>
                 <field name="employee_id"/>
+                <field name="logistic"/>
                 <field name="date"/>
                 <field name="permission_type"/>
                 <field name="time_from"/>
@@ -31,6 +32,7 @@
                 <sheet>
                     <group>
                         <field name="employee_id"/>
+                        <field name="logistic"/>
                         <field name="date"/>
                         <field name="permission_type"/>
                         <field name="time_from"/>

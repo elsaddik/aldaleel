@@ -7,7 +7,7 @@
             <field name="arch" type="xml">
 
                 <xpath expr="//button[@name='action_validate']" position="attributes">
-                    <attribute name="groups">aldaleel_attendance_policy.group_accounting_user_custom</attribute>
+                    <attribute name="groups">aldaleel_attendance_policy.group_accounting_user_custom,aldaleel_attendance_policy.group_hr_payroll_user_custom</attribute>
                 </xpath>
 
                 <xpath expr="//t[@t-name='menu']" position="inside">

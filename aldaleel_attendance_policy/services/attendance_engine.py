@@ -66,7 +66,7 @@ class AttendanceEngine:
         # الأيام اللي فيها حضور
         attended_days = set(att.check_in.date() for att in attendances if att.check_in)
 
-        # ====== التعديل هنا (المهمات تعتمد على check_in) ======
+
         missions = self.env['hr.permission'].search([
             ('employee_id', '=', employee.id),
             ('permission_type', '=', 'mission'),

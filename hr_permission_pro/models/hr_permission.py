@@ -1,6 +1,7 @@
 from odoo import models, fields, api
 from odoo.exceptions import ValidationError
 
+
 class HrPermission(models.Model):
     _name = 'hr.permission'
     _description = 'Employee Permission'
@@ -8,19 +9,23 @@ class HrPermission(models.Model):
     _order = 'date desc'
 
     name = fields.Char(default='New')
+    destination = fields.Char()
+    mission_desc = fields.Char()
+
     employee_id = fields.Many2one('hr.employee', required=True)
-    date = fields.Date(required=True)
+
+    date = fields.Date()
+
+    datetime_from = fields.Datetime(required=True)
+    datetime_to = fields.Datetime(required=True)
+
+    duration = fields.Float(compute="_compute_duration", store=True)
 
     permission_type = fields.Selection([
         ('mission', 'Mission')
-    ] ,default='mission', required=True)
+    ], default='mission', required=True)
 
-    time_from = fields.Float(required=True)
-    time_to = fields.Float(required=True)
-    logistic = fields.Char()
-
-
-    duration = fields.Float(compute="_compute_duration", store=True)
+    logistic_id = fields.Many2one('hr.logistic')
 
     state = fields.Selection([
         ('draft', 'Draft'),
@@ -30,39 +35,47 @@ class HrPermission(models.Model):
     ], default='draft')
 
     # =========================
-    # Compute
+    # Compute Duration
     # =========================
-    @api.depends('time_from', 'time_to')
+    @api.depends('datetime_from', 'datetime_to')
     def _compute_duration(self):
         for rec in self:
-            rec.duration = max(0, rec.time_to - rec.time_from)
+            if rec.datetime_from and rec.datetime_to:
+                delta = rec.datetime_to - rec.datetime_from
+                rec.duration = max(0, delta.total_seconds() / 3600.0)
+            else:
+                rec.duration = 0
 
     # =========================
     # Validation
     # =========================
-    @api.constrains('time_from', 'time_to')
+    @api.constrains('datetime_from', 'datetime_to')
     def _check_time(self):
         for rec in self:
-            if rec.time_from >= rec.time_to:
-                raise ValidationError("Invalid time range")
+            if rec.datetime_from and rec.datetime_to:
+                if rec.datetime_from >= rec.datetime_to:
+                    raise ValidationError("Invalid time range")
 
-    @api.constrains('employee_id', 'date', 'time_from', 'time_to')
+    @api.constrains('employee_id', 'datetime_from', 'datetime_to', 'state')
     def _check_overlap(self):
         for rec in self:
+            if not rec.datetime_from or not rec.datetime_to:
+                continue
+
             domain = [
                 ('id', '!=', rec.id),
                 ('employee_id', '=', rec.employee_id.id),
-                ('date', '=', rec.date),
                 ('state', 'in', ['approved', 'to_approve']),
             ]
+
             others = self.search(domain)
 
             for o in others:
-                if not (rec.time_to <= o.time_from or rec.time_from >= o.time_to):
+                if not (rec.datetime_to <= o.datetime_from or rec.datetime_from >= o.datetime_to):
                     raise ValidationError("Overlapping permission!")
 
     # =========================
-    # Workflow
+    # Actions
     # =========================
     def action_submit(self):
         self.state = 'to_approve'
@@ -72,3 +85,5 @@ class HrPermission(models.Model):
 
     def action_refuse(self):
         self.state = 'refused'
+
+

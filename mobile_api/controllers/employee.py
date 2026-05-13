@@ -94,6 +94,7 @@ class HrMobileAPIEmployee(http.Controller):
         data = {
             "id": employee.id,
             "name": employee.name,
+            "department_id": employee.department_id.name if employee.department_id else '',
             "national_id": employee.identification_id,
             "phone": employee.private_phone,
             "email": employee.private_email,
@@ -218,6 +219,44 @@ class HrMobileAPIEmployee(http.Controller):
         })
 
 
+
+    @http.route('/api/v1/logistics', type='http', auth='none', methods=['GET'], csrf=False)
+    def get_logistics(self, **kwargs):
+
+        # =========================
+        # 1. AUTH
+        # =========================
+        user, error = self._verify_token()
+        if error:
+            return self._response(success=False, message=error, status=401)
+
+        try:
+            user_env = request.env(user=user)
+
+            # =========================
+            # 2. GET DATA
+            # =========================
+            logistics = user_env['hr.logistic'].sudo().search([], order='name asc')
+
+            data = []
+            for log in logistics:
+                data.append({
+                    "id": log.id,
+                    "name": log.name,
+
+                })
+
+            # =========================
+            # 3. RESPONSE
+            # =========================
+            return self._response(
+                data=data,
+                message="Logistics fetched successfully",
+                status=200
+            )
+        except Exception as e:
+            return self._response(success=False, message=str(e), status=400)
+
     @http.route('/api/v1/permission/apply', type='http', auth='none', methods=['POST'], csrf=False)
     def api_apply_permission(self, **kwargs):
         user_id, error = self._verify_token()
@@ -227,19 +266,24 @@ class HrMobileAPIEmployee(http.Controller):
         data = self._get_json_data()
 
         permission_type = data.get('permission_type')
-        logistic = data.get('logistic')
-        date = data.get('date')
-        time_from = data.get('time_from')
-        time_to = data.get('time_to')
+        destination = data.get('destination')
+        desc = data.get('description')
+        datetime_from = data.get('datetime_from')
+        datetime_to = data.get('datetime_to')
+        logistic_id = data.get('logistic_id')
 
         try:
-            # تحويل التاريخ
-            date = datetime.strptime(date, "%Y-%m-%d").date()
-
+            # =========================
+            # Convert datetime
+            # =========================
+            datetime_from = datetime.strptime(datetime_from, "%Y-%m-%d %H:%M:%S")
+            datetime_to = datetime.strptime(datetime_to, "%Y-%m-%d %H:%M:%S")
 
             user_env = request.env(user=user_id)
 
-            # الحصول على الموظف
+            # =========================
+            # Get Employee
+            # =========================
             employee = user_env['hr.employee'].sudo().search([
                 ('user_id', '=', user_id)
             ], limit=1)
@@ -247,14 +291,16 @@ class HrMobileAPIEmployee(http.Controller):
             if not employee:
                 return self._response(success=False, message="الموظف غير موجود", status=404)
 
+            # =========================
+            # Check Overlap (NEW LOGIC)
+            # =========================
             existing_permissions = user_env['hr.permission'].sudo().search([
                 ('employee_id', '=', employee.id),
-                ('date', '=', date),
                 ('state', 'in', ['approved', 'to_approve']),
             ])
 
             for p in existing_permissions:
-                if not (float(time_to) <= p.time_from or float(time_from) >= p.time_to):
+                if not (datetime_to <= p.datetime_from or datetime_from >= p.datetime_to):
                     return self._response(
                         success=False,
                         message="يوجد مهمة في نفس الوقت",
@@ -266,11 +312,13 @@ class HrMobileAPIEmployee(http.Controller):
             # =========================
             vals = {
                 'employee_id': employee.id,
-                'logistic': logistic,
-                'date': date,
+                'destination': destination,
+                'mission_desc': desc,
                 'permission_type': permission_type,
-                'time_from': float(time_from),
-                'time_to': float(time_to),
+                'datetime_from': datetime_from,
+                'datetime_to': datetime_to,
+                'logistic_id': logistic_id,
+                'date': datetime_from.date(),
             }
 
             permission = user_env['hr.permission'].sudo().create(vals)
@@ -278,11 +326,15 @@ class HrMobileAPIEmployee(http.Controller):
             # Submit تلقائي
             permission.action_submit()
 
+            # =========================
+            # Attachment
+            # =========================
             file_data = data.get('file_data')
             file_name = data.get('file_name')
             file_mimetype = data.get('file_mimetype')
-            attach= Attachment()
+
             if file_data:
+                attach = Attachment()
                 attachment, error = attach.create_attachment(
                     request.env,
                     'hr.permission',
@@ -295,13 +347,19 @@ class HrMobileAPIEmployee(http.Controller):
                 if error:
                     return self._response(success=False, message=error, status=400)
 
+            # =========================
+            # Response
+            # =========================
             return self._response(
                 data={
                     "id": permission.id,
                     "employee_id": permission.employee_id.id,
-                    "logistic": permission.logistic,
-                    "time_from": permission.time_from,
-                    "time_to": permission.time_to,
+                    "destination": permission.destination,
+                    "description": permission.mission_desc,
+                    "logistic_id": permission.logistic_id.id if permission.logistic_id else None,
+                    "logistic_name": permission.logistic_id.name if permission.logistic_id else None,
+                    "datetime_from": permission.datetime_from,
+                    "datetime_to": permission.datetime_to,
                     "state": permission.state,
                     "duration": permission.duration
                 },
@@ -311,6 +369,102 @@ class HrMobileAPIEmployee(http.Controller):
 
         except Exception as e:
             return self._response(success=False, message=str(e), status=400)
+
+
+    # @http.route('/api/v1/permission/apply', type='http', auth='none', methods=['POST'], csrf=False)
+    # def api_apply_permission(self, **kwargs):
+    #     user_id, error = self._verify_token()
+    #     if error:
+    #         return self._response(success=False, message=error, status=401)
+    #
+    #     data = self._get_json_data()
+    #
+    #     permission_type = data.get('permission_type')
+    #     desitination = data.get('destination')
+    #     desc= data.get('description')
+    #     date = data.get('date')
+    #     time_from = data.get('time_from')
+    #     time_to = data.get('time_to')
+    #
+    #     try:
+    #         # تحويل التاريخ
+    #         date = datetime.strptime(date, "%Y-%m-%d").date()
+    #
+    #
+    #         user_env = request.env(user=user_id)
+    #
+    #         # الحصول على الموظف
+    #         employee = user_env['hr.employee'].sudo().search([
+    #             ('user_id', '=', user_id)
+    #         ], limit=1)
+    #
+    #         if not employee:
+    #             return self._response(success=False, message="الموظف غير موجود", status=404)
+    #
+    #         existing_permissions = user_env['hr.permission'].sudo().search([
+    #             ('employee_id', '=', employee.id),
+    #             ('date', '=', date),
+    #             ('state', 'in', ['approved', 'to_approve']),
+    #         ])
+    #
+    #         for p in existing_permissions:
+    #             if not (float(time_to) <= p.time_from or float(time_from) >= p.time_to):
+    #                 return self._response(
+    #                     success=False,
+    #                     message="يوجد مهمة في نفس الوقت",
+    #                     status=400
+    #                 )
+    #
+    #         # =========================
+    #         # Create
+    #         # =========================
+    #         vals = {
+    #             'employee_id': employee.id,
+    #             'logistic': logistic,
+    #             'date': date,
+    #             'permission_type': permission_type,
+    #             'time_from': float(time_from),
+    #             'time_to': float(time_to),
+    #         }
+    #
+    #         permission = user_env['hr.permission'].sudo().create(vals)
+    #
+    #         # Submit تلقائي
+    #         permission.action_submit()
+    #
+    #         file_data = data.get('file_data')
+    #         file_name = data.get('file_name')
+    #         file_mimetype = data.get('file_mimetype')
+    #         attach= Attachment()
+    #         if file_data:
+    #             attachment, error = attach.create_attachment(
+    #                 request.env,
+    #                 'hr.permission',
+    #                 permission.id,
+    #                 file_name,
+    #                 file_data,
+    #                 file_mimetype
+    #             )
+    #
+    #             if error:
+    #                 return self._response(success=False, message=error, status=400)
+    #
+    #         return self._response(
+    #             data={
+    #                 "id": permission.id,
+    #                 "employee_id": permission.employee_id.id,
+    #                 "logistic": permission.logistic,
+    #                 "time_from": permission.time_from,
+    #                 "time_to": permission.time_to,
+    #                 "state": permission.state,
+    #                 "duration": permission.duration
+    #             },
+    #             message="تم إنشاء المهمة بنجاح",
+    #             status=201
+    #         )
+    #
+    #     except Exception as e:
+    #         return self._response(success=False, message=str(e), status=400)
 
     @http.route('/api/v1/notifications', type='http', auth='none', methods=['GET'], csrf=False)
     def get_notifications(self, **kwargs):
@@ -356,133 +510,259 @@ class HrMobileAPIEmployee(http.Controller):
             "records": notification_data
         })
 
+
+
     @http.route('/api/v1/next-checkout', type='http', auth='none', methods=['GET'], csrf=False)
     def get_next_checkout(self, **kwargs):
 
-            # =========================
-            # 1. AUTH
-            user, error = self._verify_token()
-            if error:
-                return self._response(success=False, message=error, status=401)
+        # =========================
+        # 1. AUTH
+        # =========================
+        user, error = self._verify_token()
+        if error:
+            return self._response(success=False, message=error, status=401)
 
-            # =========================
-            # 2. EMPLOYEE
-            employee = request.env['hr.employee'].sudo().search([
-                ('user_id', '=', user)
-            ], limit=1)
+        # =========================
+        # 2. EMPLOYEE
+        # =========================
+        employee = request.env['hr.employee'].sudo().search([
+            ('user_id', '=', user)
+        ], limit=1)
 
-            if not employee:
-                return self._response(success=False, message="Employee not found", status=404)
+        if not employee:
+            return self._response(success=False, message="Employee not found", status=404)
 
-            today = fields.Date.today()
-            now = fields.Datetime.now()
+        today = fields.Date.today()
+        now = fields.Datetime.now()
 
-            # =====================================================
-            # Helper
-            def float_to_datetime(base_date, float_hour):
-                return datetime.combine(base_date, time(
-                    hour=int(float_hour),
-                    minute=int((float_hour % 1) * 60)
-                ))
+        # =====================================================
+        # 3. CHECK-IN CHECK
+        # =====================================================
+        attendance = request.env['hr.attendance'].sudo().search([
+            ('employee_id', '=', employee.id),
+            ('check_in', '>=', datetime.combine(today, time.min)),
+            ('check_in', '<=', datetime.combine(today, time.max)),
+        ], order='check_in desc', limit=1)
 
-            # =====================================================
-            # 3. CHECK-IN CHECK
-            print(datetime.combine(today, time.min))
-            print(datetime.combine(today, time.max))
-            print(employee.id,employee.name)
-            attendance = request.env['hr.attendance'].sudo().search([
-                ('employee_id', '=', employee.id),
-                ('check_in', '>=', datetime.combine(today, time.min)),
-                ('check_in', '<=', datetime.combine(today, time.max)),
-            ], order='check_in desc', limit=1)
-
-            if not attendance or attendance.check_out:
-                return self._response({
-                    "type": "no_active_session",
-                    "message": "Employee not checked in"
-                })
-
-            # =====================================================
-            # 4. DEFAULT CHECKOUT
-            DEFAULT_HOUR = 15.5  # 15:30
-            default_checkout = float_to_datetime(today, DEFAULT_HOUR)
-
-            # =====================================================
-            # 5. EARLY LEAVE
-            leave = request.env['hr.leave'].sudo().search([
-                ('employee_id', '=', employee.id),
-                ('request_date_from', '=', today),
-                ('holiday_status_id.id', '=', 77),
-                ('state', '=', 'validate')
-            ], limit=1)
-
-            if leave and leave.request_hour_from and leave.request_hour_to:
-                leave_from = float_to_datetime(today, leave.request_hour_from)
-                leave_to = float_to_datetime(today, leave.request_hour_to)
-
-
-                if now < leave_from:
-                    return self._response({
-                        "type": "early_leave",
-                        "next_checkout": fields.Datetime.to_string(leave_from)
-                    })
-
-                # أثناء الإذن (المفروض يكون خارج العمل)
-                elif leave_from <= now <= leave_to:
-                    return self._response({
-                        "type": "early_leave",
-                        "next_checkout": fields.Datetime.to_string(leave_to)
-                    })
-
-
-                elif now > leave_to:
-                    pass
-
-            # =====================================================
-            # 6. MISSION
-            mission = request.env['hr.permission'].sudo().search([
-                ('employee_id', '=', employee.id),
-                ('date', '=', today),
-                ('state', '=', 'approved')
-            ], limit=1)
-
-            if mission and mission.time_from and mission.time_to:
-                mission_from = float_to_datetime(today, mission.time_from)
-                mission_to = float_to_datetime(today, mission.time_to)
-
-                # قبل المهمة
-                if now < mission_from:
-                    return self._response({
-                        "type": "mission",
-                        "next_checkout": fields.Datetime.to_string(mission_from)
-                    })
-
-                # أثناء المهمة
-                elif mission_from <= now <= mission_to:
-                    return self._response({
-                        "type": "mission",
-                        "next_checkout": fields.Datetime.to_string(mission_to)
-                    })
-
-                # بعد المهمة → يرجع يكمل شغل
-                elif now > mission_to:
-                    pass
-
-            # =====================================================
-            # 7. END OF DAY CHECK
-            if now >= default_checkout:
-                return self._response({
-                    "type": "day_closed",
-                    "message": "Working day finished"
-                })
-
-            # =====================================================
-            # 8. DEFAULT
+        if not attendance or attendance.check_out:
             return self._response({
-                "type": "default",
-                "next_checkout": fields.Datetime.to_string(default_checkout)
+                "type": "no_active_session",
+                "message": "Employee not checked in"
             })
 
+        # =====================================================
+        # 4. DEFAULT CHECKOUT
+        # =====================================================
+        DEFAULT_HOUR = 15.5  # 15:30
+        default_checkout = datetime.combine(today, time(
+            hour=int(DEFAULT_HOUR),
+            minute=int((DEFAULT_HOUR % 1) * 60)
+        ))
+
+        # =====================================================
+        # 5. EARLY LEAVE (لسه float زي ما هو)
+        # =====================================================
+        leave = request.env['hr.leave'].sudo().search([
+            ('employee_id', '=', employee.id),
+            ('request_date_from', '=', today),
+            ('holiday_status_id.id', '=', 77),
+            ('state', '=', 'validate')
+        ], limit=1)
+
+        if leave and leave.request_hour_from and leave.request_hour_to:
+            leave_from = datetime.combine(today, time(
+                hour=int(leave.request_hour_from),
+                minute=int((leave.request_hour_from % 1) * 60)
+            ))
+            leave_to = datetime.combine(today, time(
+                hour=int(leave.request_hour_to),
+                minute=int((leave.request_hour_to % 1) * 60)
+            ))
+
+            if now < leave_from:
+                return self._response({
+                    "type": "early_leave",
+                    "next_checkout": fields.Datetime.to_string(leave_from)
+                })
+
+            elif leave_from <= now <= leave_to:
+                return self._response({
+                    "type": "early_leave",
+                    "next_checkout": fields.Datetime.to_string(leave_to)
+                })
+
+        # =====================================================
+        # 6. MISSION (UPDATED 🔥)
+        # =====================================================
+        missions = request.env['hr.permission'].sudo().search([
+            ('employee_id', '=', employee.id),
+            ('state', '=', 'approved'),
+        ])
+
+        for mission in missions:
+            if not mission.datetime_from or not mission.datetime_to:
+                continue
+
+            mission_from = mission.datetime_from
+            mission_to = mission.datetime_to
+
+            # قبل المهمة
+            if now < mission_from:
+                return self._response({
+                    "type": "mission",
+                    "next_checkout": fields.Datetime.to_string(mission_from)
+                })
+
+            # أثناء المهمة
+            elif mission_from <= now <= mission_to:
+                return self._response({
+                    "type": "mission",
+                    "next_checkout": fields.Datetime.to_string(mission_to)
+                })
+
+        # =====================================================
+        # 7. END OF DAY
+        # =====================================================
+        if now >= default_checkout:
+            return self._response({
+                "type": "day_closed",
+                "message": "Working day finished"
+            })
+
+        # =====================================================
+        # 8. DEFAULT
+        # =====================================================
+        return self._response({
+            "type": "default",
+            "next_checkout": fields.Datetime.to_string(default_checkout)
+        })
+    # @http.route('/api/v1/next-checkout', type='http', auth='none', methods=['GET'], csrf=False)
+    # def get_next_checkout(self, **kwargs):
+    #
+    #         # =========================
+    #         # 1. AUTH
+    #         user, error = self._verify_token()
+    #         if error:
+    #             return self._response(success=False, message=error, status=401)
+    #
+    #         # =========================
+    #         # 2. EMPLOYEE
+    #         employee = request.env['hr.employee'].sudo().search([
+    #             ('user_id', '=', user)
+    #         ], limit=1)
+    #
+    #         if not employee:
+    #             return self._response(success=False, message="Employee not found", status=404)
+    #
+    #         today = fields.Date.today()
+    #         now = fields.Datetime.now()
+    #
+    #         # =====================================================
+    #         # Helper
+    #         def float_to_datetime(base_date, float_hour):
+    #             return datetime.combine(base_date, time(
+    #                 hour=int(float_hour),
+    #                 minute=int((float_hour % 1) * 60)
+    #             ))
+    #
+    #         # =====================================================
+    #         # 3. CHECK-IN CHECK
+    #         print(datetime.combine(today, time.min))
+    #         print(datetime.combine(today, time.max))
+    #         print(employee.id,employee.name)
+    #         attendance = request.env['hr.attendance'].sudo().search([
+    #             ('employee_id', '=', employee.id),
+    #             ('check_in', '>=', datetime.combine(today, time.min)),
+    #             ('check_in', '<=', datetime.combine(today, time.max)),
+    #         ], order='check_in desc', limit=1)
+    #
+    #         if not attendance or attendance.check_out:
+    #             return self._response({
+    #                 "type": "no_active_session",
+    #                 "message": "Employee not checked in"
+    #             })
+    #
+    #         # =====================================================
+    #         # 4. DEFAULT CHECKOUT
+    #         DEFAULT_HOUR = 15.5  # 15:30
+    #         default_checkout = float_to_datetime(today, DEFAULT_HOUR)
+    #
+    #         # =====================================================
+    #         # 5. EARLY LEAVE
+    #         leave = request.env['hr.leave'].sudo().search([
+    #             ('employee_id', '=', employee.id),
+    #             ('request_date_from', '=', today),
+    #             ('holiday_status_id.id', '=', 77),
+    #             ('state', '=', 'validate')
+    #         ], limit=1)
+    #
+    #         if leave and leave.request_hour_from and leave.request_hour_to:
+    #             leave_from = float_to_datetime(today, leave.request_hour_from)
+    #             leave_to = float_to_datetime(today, leave.request_hour_to)
+    #
+    #
+    #             if now < leave_from:
+    #                 return self._response({
+    #                     "type": "early_leave",
+    #                     "next_checkout": fields.Datetime.to_string(leave_from)
+    #                 })
+    #
+    #             # أثناء الإذن (المفروض يكون خارج العمل)
+    #             elif leave_from <= now <= leave_to:
+    #                 return self._response({
+    #                     "type": "early_leave",
+    #                     "next_checkout": fields.Datetime.to_string(leave_to)
+    #                 })
+    #
+    #
+    #             elif now > leave_to:
+    #                 pass
+    #
+    #         # =====================================================
+    #         # 6. MISSION
+    #         mission = request.env['hr.permission'].sudo().search([
+    #             ('employee_id', '=', employee.id),
+    #             ('date', '=', today),
+    #             ('state', '=', 'approved')
+    #         ], limit=1)
+    #
+    #         if mission and mission.time_from and mission.time_to:
+    #             mission_from = float_to_datetime(today, mission.time_from)
+    #             mission_to = float_to_datetime(today, mission.time_to)
+    #
+    #             # قبل المهمة
+    #             if now < mission_from:
+    #                 return self._response({
+    #                     "type": "mission",
+    #                     "next_checkout": fields.Datetime.to_string(mission_from)
+    #                 })
+    #
+    #             # أثناء المهمة
+    #             elif mission_from <= now <= mission_to:
+    #                 return self._response({
+    #                     "type": "mission",
+    #                     "next_checkout": fields.Datetime.to_string(mission_to)
+    #                 })
+    #
+    #             # بعد المهمة → يرجع يكمل شغل
+    #             elif now > mission_to:
+    #                 pass
+    #
+    #         # =====================================================
+    #         # 7. END OF DAY CHECK
+    #         if now >= default_checkout:
+    #             return self._response({
+    #                 "type": "day_closed",
+    #                 "message": "Working day finished"
+    #             })
+    #
+    #         # =====================================================
+    #         # 8. DEFAULT
+    #         return self._response({
+    #             "type": "default",
+    #             "next_checkout": fields.Datetime.to_string(default_checkout)
+    #         })
+    #
 
     @http.route('/api/v5/employee/performance', type='http', auth='none', methods=['GET'], csrf=False)
     def performance(self, **kwargs):

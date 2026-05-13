@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    
+    <!-- list View -->
+    <record id="view_hr_logistic_list" model="ir.ui.view">
+        <field name="name">hr.logistic.list</field>
+        <field name="model">hr.logistic</field>
+        <field name="arch" type="xml">
+            <!-- Adding a string attribute helps with breadcrumbs and accessibility -->
+            <list string="HR Logistics">
+                <field name="name"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Form View -->
+    <record id="view_hr_logistic_form" model="ir.ui.view">
+        <field name="name">hr.logistic.form</field>
+        <field name="model">hr.logistic</field>
+        <field name="arch" type="xml">
+            <form string="HR Logistic">
+                <sheet>
+                    <!-- Modern Odoo places the primary name in a prominent title section -->
+                    <div class="oe_title">
+                        <label for="name" class="oe_edit_only"/>
+                        <h1>
+                            <field name="name" placeholder="e.g., Transport Operations"/>
+                        </h1>
+                    </div>
+                    
+                    <!-- Splitting into two groups provides a cleaner, two-column layout -->
+                   
+                    
+                    <group>
+                        <!-- Notes usually span full width or go in a notebook page -->
+                        <field name="note" placeholder="Add internal notes here..."/>
+                    </group>
+                </sheet>
+                
+               
+<!--                <div class="oe_chatter">-->
+<!--                    <field name="message_follower_ids" widget="mail_followers"/>-->
+<!--                    <field name="activity_ids" widget="mail_activity"/>-->
+<!--                    <field name="message_ids" widget="mail_thread"/>-->
+<!--                </div>-->
+            </form>
+        </field>
+    </record>
+
+</odoo>

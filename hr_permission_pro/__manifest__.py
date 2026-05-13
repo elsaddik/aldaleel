@@ -8,6 +8,7 @@
         'security/ir.model.access.csv',
         'views/hr_permission_views.xml',
         'views/leaves.xml',
+        'views/logistic.xml',
     ],
     'installable': True,
     'application': True,

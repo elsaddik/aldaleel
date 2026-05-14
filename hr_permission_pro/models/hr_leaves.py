@@ -52,11 +52,14 @@ class HrLeave(models.Model):
 
             URGENT_TYPE_ID = 87
             DIED_TYPE_ID = 89
+
             if rec.holiday_status_id.id == DIED_TYPE_ID:
                 if rec.number_of_days >= 3:
                     raise ValidationError(
                         f"{rec.employee_id.name} cannot take more than 3 days leaves at the same leave"
                     )
+
+
 
 
             if rec.holiday_status_id.id == URGENT_TYPE_ID:
@@ -75,6 +78,17 @@ class HrLeave(models.Model):
 
     def action_submit_for_approval(self):
         for leave in self:
+            SICK_TYPE_ID = 2
+            if leave.holiday_status_id.id == SICK_TYPE_ID:
+
+                attachments_count = self.env['ir.attachment'].search_count([
+                    ('res_model', '=', 'hr.leave'),
+                    ('res_id', '=', leave.id),
+                ])
+
+                if attachments_count == 0:
+                    raise ValidationError("يجب إرفاق مستند مع الإجازة المرضية")
+
             if leave.state != 'confirm':
                 raise UserError("Request must be in confirm state")
 

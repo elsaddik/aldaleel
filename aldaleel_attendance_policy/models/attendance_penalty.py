@@ -1,4 +1,4 @@
-from odoo import models, fields, api
+from odoo import models, fields, api,_
 from ..services.attendance_engine import AttendanceEngine
 
 class AttendancePenalty(models.Model):
@@ -46,6 +46,18 @@ class AttendancePenalty(models.Model):
                 ('employee_id','=',emp.id),
                 ('period_start','=',start)
             ], limit=1)
+            if result['absence']==1:
+                employee_partner = emp.user_id.partner_id
+                if employee_partner:
+                    message=employee_partner.sudo().message_post(
+                        author_id=None,
+                        body=_('warnng first absence to you'),
+                        message_type='notification',
+
+                        subtype_xmlid='mail.mt_comment'
+                    )
+                    print(message)
+                result['absence']= 0
             vals = {
                 "employee_id": emp.id,
                 "period_start": start,

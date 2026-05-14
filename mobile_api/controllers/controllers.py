@@ -232,6 +232,7 @@ class HrMobileAPI(http.Controller):
         })
 
 
+
     @http.route('/api/v1/public-holidays', type='http', auth='none', methods=['GET'], csrf=False)
     def get_public_holidays(self, **kwargs):
         user, error = self._verify_token()
@@ -243,15 +244,18 @@ class HrMobileAPI(http.Controller):
         limit = int(kwargs.get('limit', 10))
         offset = (page - 1) * limit
 
-
         employee = request.env['hr.employee'].sudo().search([('user_id', '=', user)], limit=1)
 
-
-        calendar = employee.resource_calendar_id
-
+        # 📌 السنة الحالية
+        current_year =  fields.Datetime.now().year
+        start_date = f"{current_year}-01-01 00:00:00"
+        end_date = f"{current_year}-12-31 23:59:59"
+        print(current_year)
+        # ✅ الدومين الجديد (حسب السنة فقط)
         domain = [
-            ('resource_id', '=', False),  
-            ('calendar_id', '=', calendar.id)
+            ('resource_id', '=', False),
+            ('date_from', '>=', start_date),
+            ('date_from', '<=', end_date),
         ]
 
         holidays_model = request.env['resource.calendar.leaves'].sudo()
@@ -266,7 +270,7 @@ class HrMobileAPI(http.Controller):
                 "name": holiday.name,
                 "from": str(holiday.date_from),
                 "to": str(holiday.date_to),
-                "calendar": holiday.calendar_id.name,
+                # "calendar": holiday.calendar_id.name if holiday.calendar_id else None,
             })
 
         return self._response({
@@ -275,7 +279,50 @@ class HrMobileAPI(http.Controller):
             "current_page": page,
             "records": holiday_data
         })
-
+    # @http.route('/api/v1/public-holidays', type='http', auth='none', methods=['GET'], csrf=False)
+    # def get_public_holidays(self, **kwargs):
+    #     user, error = self._verify_token()
+    #     if error:
+    #         return self._response(success=False, message=error, status=401)
+    #
+    #     # Pagination
+    #     page = int(kwargs.get('page', 1))
+    #     limit = int(kwargs.get('limit', 10))
+    #     offset = (page - 1) * limit
+    #
+    #
+    #     employee = request.env['hr.employee'].sudo().search([('user_id', '=', user)], limit=1)
+    #
+    #
+    #     calendar = employee.resource_calendar_id
+    #
+    #     domain = [
+    #         ('resource_id', '=', False),
+    #         ('calendar_id', '=', calendar.id)
+    #     ]
+    #
+    #     holidays_model = request.env['resource.calendar.leaves'].sudo()
+    #
+    #     total_count = holidays_model.search_count(domain)
+    #     holidays = holidays_model.search(domain, limit=limit, offset=offset, order='date_from desc')
+    #
+    #     holiday_data = []
+    #     for holiday in holidays:
+    #         holiday_data.append({
+    #             "id": holiday.id,
+    #             "name": holiday.name,
+    #             "from": str(holiday.date_from),
+    #             "to": str(holiday.date_to),
+    #             "calendar": holiday.calendar_id.name,
+    #         })
+    #
+    #     return self._response({
+    #         "total_records": total_count,
+    #         "total_pages": (total_count + limit - 1) // limit,
+    #         "current_page": page,
+    #         "records": holiday_data
+    #     })
+    #
 
     # ==========================================
     # 3. Leave Balance (رصيد الإجازات)
@@ -465,7 +512,7 @@ class HrMobileAPI(http.Controller):
             for line in slip.line_ids:
                 lines.append({
                     "name": line.name,
-                    # "code": line.code,
+                    "code": line.code,
                     # "quantity": line.quantity,
                     # "rate": line.rate,
                     "amount": line.amount,
@@ -480,14 +527,8 @@ class HrMobileAPI(http.Controller):
                 "state": slip.state,
                 "date_from": str(slip.date_from),
                 "date_to": str(slip.date_to),
-
-                # مهم: حسب النسخة
                 "net_wage": slip.net_wage if hasattr(slip, 'net_wage') else None,
                 "gross_wage": slip.gross_wage if hasattr(slip, 'gross_wage') else None,
-
-                # fallback لو مفيش fields
-                "total": sum(l.total for l in slip.line_ids),
-
                 "lines": lines
             })
 

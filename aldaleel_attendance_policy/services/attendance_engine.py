@@ -28,7 +28,7 @@ class AttendanceEngine:
     def analyze_employee(self, employee):
         start, end = self.compute_period()
 
-        # جميع الحضور الموجود
+
         attendances = self.env['hr.attendance'].search([
             ('employee_id', '=', employee.id),
             ('check_in', '>=', start),
@@ -41,7 +41,7 @@ class AttendanceEngine:
         late_hour = 0
         early_hour = 0
 
-        # جلب الإجازات العامة
+
         public_holidays = self.env['resource.calendar.leaves'].search([
             ('date_from', '<=', start),
             ('date_to', '>=', end)
@@ -84,14 +84,14 @@ class AttendanceEngine:
         if calendar_id and calendar_id.attendance_ids:
             working_days = {int(att.dayofweek) for att in calendar_id.attendance_ids}
         else:
-            # fallback (لو مفيش جدول)
+
             working_days =  {6, 0, 1, 2, 3}  # Monday → Friday
 
         current = start
         while current <= end:
             weekday = current.weekday()
 
-            # 🔹 احسب غياب فقط لو اليوم يوم عمل فعلي للموظف
+
             if weekday in working_days and \
                     current not in attended_days and \
                     current not in public_holiday_dates and \

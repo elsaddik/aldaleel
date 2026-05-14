@@ -53,11 +53,9 @@ class HrMobileAPIEmployee(http.Controller):
     @http.route('/api/v1/profile', type='http', auth='none', methods=['GET'], csrf=False)
     def get_profile(self, **kwargs):
 
-
         user, error = self._verify_token()
         if error:
             return self._response(success=False, message=error, status=401)
-
 
         employee = request.env['hr.employee'].sudo().search([
             ('user_id', '=', user)
@@ -65,7 +63,6 @@ class HrMobileAPIEmployee(http.Controller):
 
         if not employee:
             return self._response(success=False, message="Employee not found", status=404)
-
 
         attachment = request.env['ir.attachment'].sudo().search([
             ('res_model', '=', 'hr.employee'),
@@ -78,7 +75,8 @@ class HrMobileAPIEmployee(http.Controller):
             cv_data = {
                 "id": attachment.id,
                 "name": attachment.name,
-                "url": "/web/content/%s" % attachment.id
+                "url": "/web/content/%s" % attachment.id,
+                "file_base64": attachment.datas.decode('utf-8') if attachment.datas else ''
             }
 
         bank_accounts = {}
@@ -101,11 +99,14 @@ class HrMobileAPIEmployee(http.Controller):
             "joining_date": str(employee.contract_date_start or ''),
             "manager": {
                 "name": employee.parent_id.name if employee.parent_id else '',
+                "image_base64": employee.parent_id.image_128.decode(
+                    'utf-8') if employee.parent_id and employee.parent_id.image_128 else '',
                 "image": (
                     "/web/image/hr.employee/%s/image_1920" % employee.parent_id.id
                     if employee.parent_id and employee.parent_id.image_1920 else ''
                 )
             },
+            "profile_image_base64": employee.image_128.decode('utf-8') if employee.image_128 else '',
             "profile_image": (
                 "/web/image/hr.employee/%s/image_1920" % employee.id
                 if employee.image_1920 else ''
@@ -114,6 +115,71 @@ class HrMobileAPIEmployee(http.Controller):
             "cv": cv_data
         }
         return self._response(data)
+
+    # @http.route('/api/v1/profile', type='http', auth='none', methods=['GET'], csrf=False)
+    # def get_profile(self, **kwargs):
+    #
+    #
+    #     user, error = self._verify_token()
+    #     if error:
+    #         return self._response(success=False, message=error, status=401)
+    #
+    #
+    #     employee = request.env['hr.employee'].sudo().search([
+    #         ('user_id', '=', user)
+    #     ], limit=1)
+    #
+    #     if not employee:
+    #         return self._response(success=False, message="Employee not found", status=404)
+    #
+    #
+    #     attachment = request.env['ir.attachment'].sudo().search([
+    #         ('res_model', '=', 'hr.employee'),
+    #         ('res_id', '=', employee.id),
+    #         ('mimetype', 'in', ['application/pdf', 'application/msword',
+    #                             'application/vnd.openxmlformats-officedocument.wordprocessingml.document'])
+    #     ], limit=1, order='id desc')
+    #     cv_data = {}
+    #     if attachment:
+    #         cv_data = {
+    #             "id": attachment.id,
+    #             "name": attachment.name,
+    #             "url": "/web/content/%s" % attachment.id
+    #         }
+    #
+    #     bank_accounts = {}
+    #     if employee.bank_account_ids:
+    #         accounts = employee.bank_account_ids
+    #         for acc in accounts:
+    #             print(acc)
+    #             if acc.bank_id:
+    #                 bank = acc.bank_name
+    #                 bank_accounts['bank_name'] = bank
+    #             bank_accounts['bank_accounts'] = acc.acc_number
+    #
+    #     data = {
+    #         "id": employee.id,
+    #         "name": employee.name,
+    #         "department_id": employee.department_id.name if employee.department_id else '',
+    #         "national_id": employee.identification_id,
+    #         "phone": employee.private_phone,
+    #         "email": employee.private_email,
+    #         "joining_date": str(employee.contract_date_start or ''),
+    #         "manager": {
+    #             "name": employee.parent_id.name if employee.parent_id else '',
+    #             "image": (
+    #                 "/web/image/hr.employee/%s/image_1920" % employee.parent_id.id
+    #                 if employee.parent_id and employee.parent_id.image_1920 else ''
+    #             )
+    #         },
+    #         "profile_image": (
+    #             "/web/image/hr.employee/%s/image_1920" % employee.id
+    #             if employee.image_1920 else ''
+    #         ),
+    #         "bank_accounts": bank_accounts,
+    #         "cv": cv_data
+    #     }
+    #     return self._response(data)
 
     @http.route('/api/v1/profile', type='http', auth='none', methods=['PUT', 'PATCH'], csrf=False)
     def update_profile(self, **kwargs):
@@ -371,101 +437,6 @@ class HrMobileAPIEmployee(http.Controller):
             return self._response(success=False, message=str(e), status=400)
 
 
-    # @http.route('/api/v1/permission/apply', type='http', auth='none', methods=['POST'], csrf=False)
-    # def api_apply_permission(self, **kwargs):
-    #     user_id, error = self._verify_token()
-    #     if error:
-    #         return self._response(success=False, message=error, status=401)
-    #
-    #     data = self._get_json_data()
-    #
-    #     permission_type = data.get('permission_type')
-    #     desitination = data.get('destination')
-    #     desc= data.get('description')
-    #     date = data.get('date')
-    #     time_from = data.get('time_from')
-    #     time_to = data.get('time_to')
-    #
-    #     try:
-    #         # تحويل التاريخ
-    #         date = datetime.strptime(date, "%Y-%m-%d").date()
-    #
-    #
-    #         user_env = request.env(user=user_id)
-    #
-    #         # الحصول على الموظف
-    #         employee = user_env['hr.employee'].sudo().search([
-    #             ('user_id', '=', user_id)
-    #         ], limit=1)
-    #
-    #         if not employee:
-    #             return self._response(success=False, message="الموظف غير موجود", status=404)
-    #
-    #         existing_permissions = user_env['hr.permission'].sudo().search([
-    #             ('employee_id', '=', employee.id),
-    #             ('date', '=', date),
-    #             ('state', 'in', ['approved', 'to_approve']),
-    #         ])
-    #
-    #         for p in existing_permissions:
-    #             if not (float(time_to) <= p.time_from or float(time_from) >= p.time_to):
-    #                 return self._response(
-    #                     success=False,
-    #                     message="يوجد مهمة في نفس الوقت",
-    #                     status=400
-    #                 )
-    #
-    #         # =========================
-    #         # Create
-    #         # =========================
-    #         vals = {
-    #             'employee_id': employee.id,
-    #             'logistic': logistic,
-    #             'date': date,
-    #             'permission_type': permission_type,
-    #             'time_from': float(time_from),
-    #             'time_to': float(time_to),
-    #         }
-    #
-    #         permission = user_env['hr.permission'].sudo().create(vals)
-    #
-    #         # Submit تلقائي
-    #         permission.action_submit()
-    #
-    #         file_data = data.get('file_data')
-    #         file_name = data.get('file_name')
-    #         file_mimetype = data.get('file_mimetype')
-    #         attach= Attachment()
-    #         if file_data:
-    #             attachment, error = attach.create_attachment(
-    #                 request.env,
-    #                 'hr.permission',
-    #                 permission.id,
-    #                 file_name,
-    #                 file_data,
-    #                 file_mimetype
-    #             )
-    #
-    #             if error:
-    #                 return self._response(success=False, message=error, status=400)
-    #
-    #         return self._response(
-    #             data={
-    #                 "id": permission.id,
-    #                 "employee_id": permission.employee_id.id,
-    #                 "logistic": permission.logistic,
-    #                 "time_from": permission.time_from,
-    #                 "time_to": permission.time_to,
-    #                 "state": permission.state,
-    #                 "duration": permission.duration
-    #             },
-    #             message="تم إنشاء المهمة بنجاح",
-    #             status=201
-    #         )
-    #
-    #     except Exception as e:
-    #         return self._response(success=False, message=str(e), status=400)
-
     @http.route('/api/v1/notifications', type='http', auth='none', methods=['GET'], csrf=False)
     def get_notifications(self, **kwargs):
         # 1. التحقق من المصادقة بنفس طريقتك
@@ -559,13 +530,11 @@ class HrMobileAPIEmployee(http.Controller):
             minute=int((DEFAULT_HOUR % 1) * 60)
         ))
 
-        # =====================================================
-        # 5. EARLY LEAVE (لسه float زي ما هو)
-        # =====================================================
+
         leave = request.env['hr.leave'].sudo().search([
             ('employee_id', '=', employee.id),
             ('request_date_from', '=', today),
-            ('holiday_status_id.id', '=', 77),
+            ('holiday_status_id.id', '=', 84),
             ('state', '=', 'validate')
         ], limit=1)
 

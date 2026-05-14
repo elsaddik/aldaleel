@@ -49,12 +49,35 @@ class HrPermission(models.Model):
     # =========================
     # Validation
     # =========================
-    @api.constrains('datetime_from', 'datetime_to')
+    @api.constrains('datetime_from', 'datetime_to', 'employee_id')
     def _check_time(self):
         for rec in self:
             if rec.datetime_from and rec.datetime_to:
+
+                # =========================
+                # 1. Check range
+                # =========================
                 if rec.datetime_from >= rec.datetime_to:
                     raise ValidationError("Invalid time range")
+
+                # =========================
+                # 2. Max 3 missions per day
+                # =========================
+                day_start = rec.datetime_from.replace(hour=0, minute=0, second=0)
+                day_end = rec.datetime_from.replace(hour=23, minute=59, second=59)
+
+                count = self.search_count([
+                    ('id', '!=', rec.id),
+                    ('employee_id', '=', rec.employee_id.id),
+                    ('permission_type', '=', 'mission'),
+                    ('datetime_from', '>=', day_start),
+                    ('datetime_from', '<=', day_end),
+                    ('state', 'in', ['approved', 'to_approve']),
+                ])
+
+                if count >= 3:
+                    raise ValidationError("لا يمكن إضافة أكثر من 3 مهام في نفس اليوم")
+
 
     @api.constrains('employee_id', 'datetime_from', 'datetime_to', 'state')
     def _check_overlap(self):

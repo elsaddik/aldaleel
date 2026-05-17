@@ -92,7 +92,7 @@
 
                                     <tbody>
 
-                                        <!-- 🔥 Loop على الأيام -->
+
                                         <t t-foreach="doc['days']" t-as="d">
                                             <tr>
 
@@ -141,17 +141,17 @@
                                                 <td>
 
                                                     <!-- عطلة رسمية -->
-                                                    <t t-if="d.get('is_holiday')">
-                                                        <span class="text-primary fw-bold">عطلة رسمية</span>
-                                                    </t>
+<!--                                                    <t t-if="d.get('is_holiday')">-->
+<!--                                                        <span class="text-primary fw-bold">عطلة رسمية</span>-->
+<!--                                                    </t>-->
 
-                                                    <!-- راحة -->
-                                                    <t t-elif="d.get('is_off')">
-                                                        <span class="text-muted">راحة</span>
-                                                    </t>
+<!--                                                    &lt;!&ndash; راحة &ndash;&gt;-->
+<!--                                                    <t t-elif="d.get('is_off')">-->
+<!--                                                        <span class="text-muted">راحة</span>-->
+<!--                                                    </t>-->
 
                                                     <!-- إجازة بأنواعها -->
-                                                    <t t-elif="d.get('is_leave')">
+                                                    <t t-if="d.get('is_leave')">
                                                         <span class="text-info fw-bold">
                                                             <t t-esc="d.get('leave_type') or 'إجازة'"/>
                                                         </span>

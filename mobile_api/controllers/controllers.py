@@ -442,7 +442,8 @@ class HrMobileAPI(http.Controller):
                 file_mimetype = data.get('file_mimetype')
                 print(file_mimetype)
                 attach = Attachment()
-
+                if new_leave:
+                    new_leave.action_submit_for_approval()
                 if file_data:
                     attachment, error = attach.create_attachment(
                         request.env,

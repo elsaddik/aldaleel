@@ -415,43 +415,43 @@ class HrMobileAPI(http.Controller):
 
             existing_leave = user_env['hr.leave'].sudo().search([
                 ('employee_id', '=', employee.id),
-                ('date_from', '=', date_from),
-                ('date_to', '=', date_to),
+                ('date_from', '<=', date_to),
+                ('date_to', '>=', date_from),
                 ('state', 'not in', ['refuse', 'cancel'])
             ], limit=1)
 
             if existing_leave:
                 return self._response(success=False, message="هذا الطلب موجود بالفعل أو يتداخل مع إجازة أخرى",
                                       status=400)
+            if not existing_leave:
 
-            # --- الإنشاء ---
-            leave_vals = {
-                'employee_id': employee.id,
-                'holiday_status_id': int(holiday_status_id),
-                # 'date_from': date_from,
-                # 'date_to': date_to,
-                'request_date_from': date_from,
-                'request_date_to': date_to,
-                'name': data.get('reason', ''),
-            }
+                leave_vals = {
+                    'employee_id': employee.id,
+                    'holiday_status_id': int(holiday_status_id),
+                    # 'date_from': date_from,
+                    # 'date_to': date_to,
+                    'request_date_from': date_from,
+                    'request_date_to': date_to,
+                    'name': data.get('reason', ''),
+                }
 
 
-            new_leave = user_env['hr.leave'].sudo().create(leave_vals)
-            file_data = data.get('file_data')
-            file_name = data.get('file_name')
-            file_mimetype = data.get('file_mimetype')
-            print(file_mimetype)
-            attach = Attachment()
+                new_leave = user_env['hr.leave'].sudo().create(leave_vals)
+                file_data = data.get('file_data')
+                file_name = data.get('file_name')
+                file_mimetype = data.get('file_mimetype')
+                print(file_mimetype)
+                attach = Attachment()
 
-            if file_data:
-                attachment, error = attach.create_attachment(
-                    request.env,
-                    'hr.leave',
-                    new_leave.id,
-                    file_name,
-                    file_data,
-                    file_mimetype
-                )
+                if file_data:
+                    attachment, error = attach.create_attachment(
+                        request.env,
+                        'hr.leave',
+                        new_leave.id,
+                        file_name,
+                        file_data,
+                        file_mimetype
+                    )
 
                 if error:
                     return self._response(
@@ -461,7 +461,7 @@ class HrMobileAPI(http.Controller):
                     )
 
 
-            return self._response(data={"id": new_leave.id}, message="تم تقديم الطلب بنجاح", status=201)
+                return self._response(data={"id": new_leave.id}, message="تم تقديم الطلب بنجاح", status=201)
 
         except Exception as e:
             return self._response(success=False, message=str(e), status=400)

@@ -69,12 +69,24 @@
 
                                     <thead class="custom-header">
                                         <tr>
-                                            <th  style="text-align: center !important; vertical-align: middle !important;">التاريخ</th>
-                                            <th style="text-align: center !important; vertical-align: middle !important;">وقت الحضور</th>
-                                            <th style="text-align: center !important; vertical-align: middle !important;">وقت الانصراف</th>
-                                            <th style="text-align: center !important; vertical-align: middle !important;">التأخير</th>
-                                            <th style="text-align: center !important; vertical-align: middle !important;">خروج مبكر</th>
-                                            <th style="text-align: center !important; vertical-align: middle !important;">الحالة</th>
+                                            <th style="text-align: center !important; vertical-align: middle !important;">
+                                                التاريخ
+                                            </th>
+                                            <th style="text-align: center !important; vertical-align: middle !important;">
+                                                وقت الحضور
+                                            </th>
+                                            <th style="text-align: center !important; vertical-align: middle !important;">
+                                                وقت الانصراف
+                                            </th>
+                                            <th style="text-align: center !important; vertical-align: middle !important;">
+                                                التأخير
+                                            </th>
+                                            <th style="text-align: center !important; vertical-align: middle !important;">
+                                                خروج مبكر
+                                            </th>
+                                            <th style="text-align: center !important; vertical-align: middle !important;">
+                                                الحالة
+                                            </th>
                                         </tr>
                                     </thead>
 
@@ -106,52 +118,91 @@
                                                     </t>
                                                     <t t-else="">-</t>
                                                 </td>
-
-                                                <!-- delay -->
                                                 <td t-attf-class="#{d['attendance'] and d['attendance'].is_late and 'text-danger fw-bold' or ''}">
-                                                    <t t-if="d['attendance']">
-                                                        <span t-field="d['attendance'].delay_display"/>
+                                                    <t t-if="d.get('delay_order')">
+                                                        <span>
+                                                            <t t-esc="d['attendance'].delay_display"/>
+                                                            (المرة<t t-esc="d['delay_order']"/>)
+                                                        </span>
                                                     </t>
                                                     <t t-else="">-</t>
                                                 </td>
 
-                                                <!-- early -->
                                                 <td t-attf-class="#{d['attendance'] and d['attendance'].is_early and 'text-warning fw-bold' or ''}">
-                                                    <t t-if="d['attendance']">
-                                                        <span t-field="d['attendance'].early_display"/>
+                                                    <t t-if="d.get('early_order')">
+                                                        <span>
+                                                            <t t-esc="d['attendance'].early_display"/>
+                                                            (المرة<t t-esc="d['early_order']"/>)
+                                                        </span>
                                                     </t>
                                                     <t t-else="">-</t>
                                                 </td>
 
-                                                <!-- الحالة -->
                                                 <td>
-                                                    <t t-if="d['attendance']">
+
+                                                    <!-- عطلة رسمية -->
+                                                    <t t-if="d.get('is_holiday')">
+                                                        <span class="text-primary fw-bold">عطلة رسمية</span>
+                                                    </t>
+
+                                                    <!-- راحة -->
+                                                    <t t-elif="d.get('is_off')">
+                                                        <span class="text-muted">راحة</span>
+                                                    </t>
+
+                                                    <!-- إجازة بأنواعها -->
+                                                    <t t-elif="d.get('is_leave')">
+                                                        <span class="text-info fw-bold">
+                                                            <t t-esc="d.get('leave_type') or 'إجازة'"/>
+                                                        </span>
+                                                    </t>
+
+                                                    <!-- مهمة -->
+                                                    <t t-elif="d.get('is_mission')">
+                                                        <span class="text-purple fw-bold">
+                                                            مهمة:
+                                                            <t t-esc="d.get('mission', {}).get('desc')"/>
+                                                        </span>
+                                                    </t>
+
+                                                    <!-- غياب -->
+                                                    <t t-elif="d.get('is_absent')">
+                                                        <span class="text-danger fw-bold">غياب بدون مبرر</span>
+                                                    </t>
+
+                                                    <!-- حضور -->
+                                                    <t t-elif="d.get('attendance')">
 
                                                         <t t-set="st" t-value="[]"/>
-                                                        <t t-if="d['attendance'].is_mission" t-set="st"
-                                                           t-value="st + ['مهمة عمل']"/>
-                                                        <t t-if="d['attendance'].is_late" t-set="st"
-                                                           t-value="st + ['تأخير']"/>
-                                                        <t t-if="d['attendance'].is_early" t-set="st"
-                                                           t-value="st + ['خروج مبكر']"/>
+
+                                                        <!-- تأخير مع رقم -->
+                                                        <t t-if="d.get('attendance').is_late">
+                                                            <t t-set="st"
+                                                               t-value="st + ['تأخير (المرة %s)' % d.get('delay_order')]"/>
+                                                        </t>
+
+                                                        <!-- خروج مبكر مع رقم -->
+                                                        <t t-if="d.get('attendance').is_early">
+                                                            <t t-set="st"
+                                                               t-value="st + ['خروج مبكر (المرة %s)' % d.get('early_order')]"/>
+                                                        </t>
 
                                                         <t t-if="st">
                                                             <span t-esc="' / '.join(st)"/>
                                                         </t>
                                                         <t t-else="">
-                                                            <span class="text-success">منتظم</span>
+                                                            <span class="text-success fw-bold">منتظم</span>
                                                         </t>
 
                                                     </t>
 
-                                                    <!-- 🔥 مفيش بصمة -->
+                                                    <!-- fallback -->
                                                     <t t-else="">
-                                                        <span class="text-danger fw-bold">
-                                                            لا توجد بصمة
-                                                        </span>
+                                                        <span>-</span>
                                                     </t>
 
                                                 </td>
+
 
                                             </tr>
                                         </t>

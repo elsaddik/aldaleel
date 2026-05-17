@@ -1,11 +1,11 @@
 from odoo import models, fields, api, _
-from odoo.exceptions import UserError,ValidationError
+from odoo.exceptions import UserError, ValidationError
 import calendar
 from datetime import date
 
+
 class HrLeave(models.Model):
     _inherit = 'hr.leave'
-
 
     state = fields.Selection(selection_add=[
         ('manager_approve', 'Waiting Manager Approval'),
@@ -16,8 +16,6 @@ class HrLeave(models.Model):
         'hr_approve': 'cascade',
         'gm_approve': 'cascade',
     })
-
-
 
     @api.constrains('holiday_status_id', 'employee_id', 'request_date_from')
     def check_limit_permission(self):
@@ -49,7 +47,6 @@ class HrLeave(models.Model):
                         f"{rec.employee_id.name} cannot take more than 3 permissions this month"
                     )
 
-
             URGENT_TYPE_ID = 87
             DIED_TYPE_ID = 89
 
@@ -58,9 +55,6 @@ class HrLeave(models.Model):
                     raise ValidationError(
                         f"{rec.employee_id.name} cannot take more than 3 days leaves at the same leave"
                     )
-
-
-
 
             if rec.holiday_status_id.id == URGENT_TYPE_ID:
                 count_urgent = self.env['hr.leave'].search_count([
@@ -120,7 +114,6 @@ class HrLeave(models.Model):
             employee_partner = holiday.employee_id.user_id.partner_id
             manager_partner = holiday.employee_id.leave_manager_id.partner_id
 
-
             partners = (employee_partner | manager_partner).ids
 
             if partners:
@@ -144,7 +137,6 @@ class HrLeave(models.Model):
                 #     for pid_uid in inbox_pids_uids
                 # ]
 
-
                 # message=self.sudo().message_post(
                 #     body=_('%(holiday_name)s has been Accepted.', holiday_name=holiday.display_name),
                 #     subject=_('Accepted Time Off'),
@@ -154,7 +146,7 @@ class HrLeave(models.Model):
                 #     subtype_xmlid="mail.mt_comment"
                 # )
                 # print('message', message)
-                message=holiday.sudo().message_notify(
+                message = holiday.sudo().message_notify(
                     partner_ids=partners,
                     model_description=model_description,
                     subject=_('Accepted Time Off'),
@@ -162,8 +154,6 @@ class HrLeave(models.Model):
                     email_layout_xmlid="mail.mail_notification_layout",
                     subtitles=[holiday.display_name],
                 )
-
-
 
     def _notify_manager(self):
 
@@ -208,19 +198,26 @@ class HrLeave(models.Model):
             if leave.state == 'hr_approve':
                 if not user.has_group('aldaleel_attendance_policy.group_hr_payroll_user_custom'):
                     raise UserError("Only HR can approve")
-
+                #84
+                # if leave.holiday_status_id.id == 76 or leave.holiday_status_id.id == 86:
+                #     leave._action_validate(check_state)
+                #     self._notify_employee()
+                # else:
                 leave.state = 'gm_approve'
                 continue
 
-            # 3️⃣ GM
             if leave.state == 'gm_approve':
-                if not user.has_group('aldaleel_attendance_policy.group_general_manager'):
-                    raise UserError("Only GM can approve")
+                user = self.env.user
+                attendance_leave_types = [84, 86]
+                if leave.holiday_status_id.id in attendance_leave_types:
+                    if not user.has_group('aldaleel_attendance_policy.group_hr_payroll_user_custom'):
+                        raise UserError("Only HR  can approve this type of leave.")
+                else:
+                    if not user.has_group('aldaleel_attendance_policy.group_general_manager'):
+                        raise UserError("Only General Manager can approve this leave.")
 
-                validated =leave._action_validate(check_state)
-                # if validated:
+                leave._action_validate(check_state)
                 self._notify_employee()
-                continue
+
 
         return True
-

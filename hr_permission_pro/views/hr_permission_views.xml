@@ -24,10 +24,9 @@
         <field name="arch" type="xml">
             <form>
                 <header>
-                    <button name="action_submit"
-                            invisible="state != 'draft'" type="object" string="Submit"/>
-                    <button name="action_approve"     invisible="state == 'approved'" type="object" string="Approve"/>
-                    <button name="action_refuse"      invisible="state != 'to_approve'" type="object" string="Refuse"/>
+                    <button name="action_submit" invisible="state != 'draft'" type="object" string="Submit"/>
+                    <button name="action_approve"  invisible="state == 'approved' or state=='draft'" type="object" string="Approve"/>
+                    <button name="action_refuse"  invisible="state != 'to_approve'" type="object" string="Refuse"/>
                     <field name="state" widget="statusbar"/>
                 </header>
 

@@ -1,5 +1,5 @@
 from odoo import models, fields, api
-from odoo.exceptions import ValidationError
+from odoo.exceptions import ValidationError,UserError
 
 
 class HrPermission(models.Model):
@@ -104,9 +104,39 @@ class HrPermission(models.Model):
         self.state = 'to_approve'
 
     def action_approve(self):
-        self.state = 'approved'
+        for rec in self:
+            employee = rec.employee_id
+
+
+            manager = employee.parent_id
+
+
+            current_user = self.env.user
+
+            if not manager or manager.user_id != current_user:
+                raise UserError("Only the direct manager can approve this leave.")
+
+
+            rec.state = 'approved'
 
     def action_refuse(self):
-        self.state = 'refused'
+
+        for rec in self:
+            employee = rec.employee_id
+
+
+            manager = employee.parent_id
+
+
+            current_user = self.env.user
+
+            if not manager or manager.user_id != current_user:
+                raise UserError("Only the direct manager can approve this leave.")
+
+
+            rec.state = 'refused'
+
+
+
 
 

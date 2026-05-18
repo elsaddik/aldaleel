@@ -188,8 +188,8 @@ class HrLeave(models.Model):
 
             # 1️⃣ Manager
             if leave.state == 'manager_approve':
-                if leave.employee_id.parent_id.user_id != user:
-                    raise UserError("Only direct manager can approve")
+                if leave.employee_id.parent_id.user_id != user and not user.has_group('aldaleel_attendance_policy.group_hr_payroll_user_custom'):
+                    raise UserError("Only direct manager or HR  can approve")
 
                 leave.state = 'hr_approve'
                 continue
@@ -198,18 +198,15 @@ class HrLeave(models.Model):
             if leave.state == 'hr_approve':
                 if not user.has_group('aldaleel_attendance_policy.group_hr_payroll_user_custom'):
                     raise UserError("Only HR can approve")
-                #84
-                # if leave.holiday_status_id.id == 76 or leave.holiday_status_id.id == 86:
-                #     leave._action_validate(check_state)
-                #     self._notify_employee()
-                # else:
+
                 leave.state = 'gm_approve'
                 continue
 
             if leave.state == 'gm_approve':
                 user = self.env.user
-                attendance_leave_types = [84, 86]
-                if leave.holiday_status_id.id in attendance_leave_types:
+                # attendance_leave_types = [84, 86]
+                attendance_leave_types = 1
+                if leave.holiday_status_id.id != attendance_leave_types:
                     if not user.has_group('aldaleel_attendance_policy.group_hr_payroll_user_custom'):
                         raise UserError("Only HR  can approve this type of leave.")
                 else:

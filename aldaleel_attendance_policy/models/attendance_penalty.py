@@ -46,18 +46,23 @@ class AttendancePenalty(models.Model):
                 ('employee_id','=',emp.id),
                 ('period_start','=',start)
             ], limit=1)
-            if result['absence']==1:
-                employee_partner = emp.user_id.partner_id
-                if employee_partner:
-                    message=employee_partner.sudo().message_post(
-                        author_id=None,
-                        body=_('warnng first absence to you'),
-                        message_type='notification',
+            if result['absence'] == 1:
+                alert = self.env['employee.alert'].create({
+                    'name': 'Absence Warning',
+                    'message': 'First absence detected',
+                    'employee_id': emp.id,
+                    'date': fields.Date.today(),
+                })
 
-                        subtype_xmlid='mail.mt_comment'
+
+                if emp.user_id and emp.user_id.partner_id:
+                    alert.message_notify(
+                        partner_ids=[emp.user_id.partner_id.id],
+                        subject='Absence Warning',
+                        body='⚠️ You have your first absence today',
                     )
-                    print(message)
-                result['absence']= 0
+
+                result['absence'] = 0
             vals = {
                 "employee_id": emp.id,
                 "period_start": start,

@@ -70,6 +70,9 @@
                                     <thead class="custom-header">
                                         <tr>
                                             <th style="text-align: center !important; vertical-align: middle !important;">
+                                                اليوم
+                                            </th>
+                                            <th style="text-align: center !important; vertical-align: middle !important;">
                                                 التاريخ
                                             </th>
                                             <th style="text-align: center !important; vertical-align: middle !important;">
@@ -96,7 +99,10 @@
                                         <t t-foreach="doc['days']" t-as="d">
                                             <tr>
 
-                                                <!-- التاريخ -->
+                                                <td>
+                                                    <t t-esc="d['day_name']"/>
+                                                </td>
+
                                                 <td>
                                                     <t t-esc="d['date']"/>
                                                 </td>
@@ -145,10 +151,10 @@
 <!--                                                        <span class="text-primary fw-bold">عطلة رسمية</span>-->
 <!--                                                    </t>-->
 
-<!--                                                    &lt;!&ndash; راحة &ndash;&gt;-->
-<!--                                                    <t t-elif="d.get('is_off')">-->
-<!--                                                        <span class="text-muted">راحة</span>-->
-<!--                                                    </t>-->
+
+                                                    <t t-if="d.get('is_off')">
+                                                        <span class="text-muted">جدول</span>
+                                                    </t>
 
                                                     <!-- إجازة بأنواعها -->
                                                     <t t-if="d.get('is_leave')">

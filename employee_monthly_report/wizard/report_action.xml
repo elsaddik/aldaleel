@@ -1,0 +1,12 @@
+<odoo>
+
+    <record id="report_monthly_action" model="ir.actions.report">
+        <field name="name">Monthly Employee Report</field>
+        <field name="model">monthly.report.wizard</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">employee_monthly_report.report_monthly_template</field>
+        <field name="report_file">employee_monthly_report.report_monthly_template</field>
+        <field name="print_report_name">'Monthly Report - %s' % (object.date_from)</field>
+    </record>
+
+</odoo>

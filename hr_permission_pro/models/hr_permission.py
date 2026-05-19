@@ -1,5 +1,5 @@
 from odoo import models, fields, api
-from odoo.exceptions import ValidationError,UserError
+from odoo.exceptions import ValidationError, UserError, AccessError
 
 
 class HrPermission(models.Model):
@@ -78,7 +78,6 @@ class HrPermission(models.Model):
                 if count >= 3:
                     raise ValidationError("لا يمكن إضافة أكثر من 3 مهام في نفس اليوم")
 
-
     @api.constrains('employee_id', 'datetime_from', 'datetime_to', 'state')
     def _check_overlap(self):
         for rec in self:
@@ -103,40 +102,76 @@ class HrPermission(models.Model):
     def action_submit(self):
         self.state = 'to_approve'
 
+    def _send_channel_notification(self, partners, message, emp=None):
+        for partner in partners:
+            # 🔹 البحث عن chat بين المستخدم الحالي والـ partner
+            channel = self.env['discuss.channel'].search([
+                ('channel_type', '=', 'chat'),
+                ('channel_partner_ids', 'in', [partner.id]),
+                ('channel_partner_ids', 'in', [self.env.user.partner_id.id]),
+            ], limit=1)
+
+            # 🔹 لو مش موجود نعمل channel جديد
+            if not channel:
+                channel = self.env['discuss.channel'].create({
+                    'channel_partner_ids': [
+                        (4, partner.id),
+                        (4, self.env.user.partner_id.id),
+                    ],
+                    'channel_type': 'chat',
+                    'name': f'Chat with {partner.name}',
+                })
+
+            # 🔹 إرسال الرسالة
+            channel.message_post(
+                body=message,
+                message_type='comment',
+                subtype_xmlid='mail.mt_comment'
+            )
+
     def action_approve(self):
         for rec in self:
+            user = self.env.user
             employee = rec.employee_id
 
-
-            manager = employee.parent_id
-
-
-            current_user = self.env.user
-
-            if not manager or manager.user_id != current_user:
-                raise UserError("Only the direct manager can approve this leave.")
-
-
+            # ✅ تغيير الحالة
             rec.state = 'approved'
+
+            # 👤 إشعار الموظف
+            if employee.user_id:
+                rec._send_channel_notification(
+                    employee.user_id.partner_id,
+                    f"تمت الموافقة على الطلب الخاص بك بواسطة {user.name}"
+                )
+
+            # 👑 إشعار Admins
+            admins = self.env.ref('base.group_system').user_ids.mapped('partner_id')
+            if admins:
+                rec._send_channel_notification(
+                    admins,
+                    f"تمت الموافقة على طلب {employee.name}"
+                )
+
+            # 🧑‍💼 إشعار HR
+            hr_users = self.env.ref('aldaleel_attendance_policy.group_hr_payroll_user_custom').user_ids
+            hr_partners = hr_users.mapped('partner_id')
+
+            if hr_partners:
+                rec._send_channel_notification(
+                    hr_partners,
+                    f"تم اعتماد طلب الموظف {employee.name}"
+                )
 
     def action_refuse(self):
 
         for rec in self:
+            user = self.env.user
             employee = rec.employee_id
-
-
             manager = employee.parent_id
+            is_hr = user.has_group('aldaleel_attendance_policy.group_hr_payroll_user_custom')
+            is_manager = manager and manager.user_id == user
 
-
-            current_user = self.env.user
-
-            if not manager or manager.user_id != current_user:
-                raise UserError("Only the direct manager can approve this leave.")
-
+            if not (is_hr or is_manager):
+                raise AccessError("عفواً، ليس لديك صلاحية الرفض.")
 
             rec.state = 'refused'
-
-
-
-
-

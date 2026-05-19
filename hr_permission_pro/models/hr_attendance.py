@@ -88,7 +88,8 @@ class HrAttendance(models.Model):
         for rec in self:
             rec.delay_minutes = 0
             rec.is_late = False
-
+            if rec.employee_id.state_employee_exception == 'is_delivery':
+                continue
             if not rec.check_in or not rec.employee_id:
                 continue
 
@@ -139,10 +140,13 @@ class HrAttendance(models.Model):
     # =========================
     @api.depends('check_out', 'employee_id', 'is_mission')
     def _compute_early(self):
+        policy = self.env['bank.attendance.policy'].search([], limit=1)
+        exec_checkout = 14.92
         for rec in self:
             rec.early_minutes = 0
             rec.is_early = False
-
+            if rec.employee_id.state_employee_exception == 'is_deliver':
+                continue
             if not rec.check_out or not rec.employee_id:
                 continue
 
@@ -154,7 +158,7 @@ class HrAttendance(models.Model):
                 continue
 
             check_out = self._to_local(rec.check_out)
-
+            print(check_out)
             leave = self.env['hr.leave'].search([
                 ('employee_id', '=', rec.employee_id.id),
                 ('request_date_from', '=', check_out.date()),
@@ -173,15 +177,28 @@ class HrAttendance(models.Model):
 
             if not attendance_lines:
                 continue
-
             end_hour = max(attendance_lines.mapped('hour_to'))
+
+            if policy:
+                grace_minutes =policy.grace_minutes
+                end_hour -= (grace_minutes / 60) - (5/60)
             end_dt = self._float_to_datetime(check_out, end_hour)
 
             if check_out >= end_dt:
                 continue
+            exec_checkout_dt = self._float_to_datetime(check_out, exec_checkout)
 
-            rec.early_minutes = (end_dt - check_out).total_seconds() / 60
-            rec.is_early = rec.early_minutes > 0
+            if rec.employee_id.state_employee_exception == 'is_exception_checkout':
+
+                if check_out < exec_checkout_dt:
+                    end_hour= 14.92
+                    end_dt = self._float_to_datetime(check_out, end_hour)
+                    rec.early_minutes = (end_dt - check_out).total_seconds() / 60
+                    rec.is_early = rec.early_minutes > 0
+                else: continue
+            else:
+                rec.early_minutes = (end_dt - check_out).total_seconds() / 60
+                rec.is_early = rec.early_minutes > 0
 
     # =========================
     # Display

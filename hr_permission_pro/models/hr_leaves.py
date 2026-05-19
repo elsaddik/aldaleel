@@ -102,85 +102,56 @@ class HrLeave(models.Model):
 
         return res
 
-    def _notify_employee(self):
-        leaves = self.filtered(lambda hol: (
-                (hol.validation_type == 'both' and hol.state in ['validate1', 'validate']) or
-                (hol.validation_type == 'manager' and hol.state == 'validate')
-        ))
-
-        model_description = self.env['ir.model']._get('hr.holidays').name
-
-        for holiday in leaves:
-            employee_partner = holiday.employee_id.user_id.partner_id
-            manager_partner = holiday.employee_id.leave_manager_id.partner_id
-
-            partners = (employee_partner | manager_partner).ids
-
-            if partners:
-                # self.sudo().message_post(
-                #     author_id=self.env.ref('base.partner_root').id,
-                #     body=Markup('<div class="o_mail_notification o_hide_author">%s</div>')
-                #          % self._get_visitor_leave_message(**kwargs),
-                #     message_type='notification',
-                #     subtype_xmlid='mail.mt_comment'
-                # )
-
-                # print('partners',partners)
-                # notif_create_values = [
-                #     {
-                #         "author_id": message.author_id.id,
-                #         "mail_message_id": message.id,
-                #         "notification_status": "sent",
-                #         "notification_type": "inbox",
-                #         "res_partner_id": pid_uid[0],
-                #     }
-                #     for pid_uid in inbox_pids_uids
-                # ]
-
-                # message=self.sudo().message_post(
-                #     body=_('%(holiday_name)s has been Accepted.', holiday_name=holiday.display_name),
-                #     subject=_('Accepted Time Off'),
-                #     partner_ids=partners,
-                #     message_type='notification',
-                #     notification_type="inbox",
-                #     subtype_xmlid="mail.mt_comment"
-                # )
-                # print('message', message)
-                message = holiday.sudo().message_notify(
-                    partner_ids=partners,
-                    model_description=model_description,
-                    subject=_('Accepted Time Off'),
-                    body=_('%(holiday_name)s has been Accepted.', holiday_name=holiday.display_name),
-                    email_layout_xmlid="mail.mail_notification_layout",
-                    subtitles=[holiday.display_name],
-                )
-
-    def _notify_manager(self):
-
-        res = super()._notify_manager()
-
-        leaves = self.filtered(lambda hol: (
-                (hol.validation_type == 'both' and hol.state in ['validate1', 'validate']) or
-                (hol.validation_type == 'manager' and hol.state == 'validate')
-        ))
-
-        model_description = self.env['ir.model']._get('hr.holidays').name
-
-        for holiday in leaves:
-            employee_partner = holiday.employee_id.user_id.partner_id.ids
-
-            if employee_partner:
-                holiday.sudo().message_notify(
-                    partner_ids=employee_partner,
-                    model_description=model_description,
-                    subject=_('Refused Time Off'),
-                    body=_('%(holiday_name)s has been refused.', holiday_name=holiday.display_name),
-                    email_layout_xmlid="mail.mail_notification_layout",
-                    subtitles=[holiday.display_name],
-                )
-
-        return res
-
+    # def _notify_employee(self):
+    #     leaves = self.filtered(lambda hol: (
+    #             (hol.validation_type == 'both' and hol.state in ['validate1', 'validate']) or
+    #             (hol.validation_type == 'manager' and hol.state == 'validate')
+    #     ))
+    #
+    #     model_description = self.env['ir.model']._get('hr.holidays').name
+    #
+    #     for holiday in leaves:
+    #         employee_partner = holiday.employee_id.user_id.partner_id
+    #         manager_partner = holiday.employee_id.leave_manager_id.partner_id
+    #
+    #         partners = (employee_partner | manager_partner).ids
+    #
+    #         if partners:
+    #             holiday.sudo().message_notify(
+    #                 partner_ids=partners,
+    #                 model_description=model_description,
+    #                 subject=_('Accepted Time Off'),
+    #                 body=_('%(holiday_name)s has been Accepted.', holiday_name=holiday.display_name),
+    #                 email_layout_xmlid="mail.mail_notification_layout",
+    #                 subtitles=[holiday.display_name],
+    #             )
+    #
+    # def _notify_manager(self):
+    #
+    #     res = super()._notify_manager()
+    #
+    #     leaves = self.filtered(lambda hol: (
+    #             (hol.validation_type == 'both' and hol.state in ['validate1', 'validate']) or
+    #             (hol.validation_type == 'manager' and hol.state == 'validate')
+    #     ))
+    #
+    #     model_description = self.env['ir.model']._get('hr.holidays').name
+    #
+    #     for holiday in leaves:
+    #         employee_partner = holiday.employee_id.user_id.partner_id.ids
+    #
+    #         if employee_partner:
+    #             holiday.sudo().message_notify(
+    #                 partner_ids=employee_partner,
+    #                 model_description=model_description,
+    #                 subject=_('Refused Time Off'),
+    #                 body=_('%(holiday_name)s has been refused.', holiday_name=holiday.display_name),
+    #                 email_layout_xmlid="mail.mail_notification_layout",
+    #                 subtitles=[holiday.display_name],
+    #             )
+    #
+    #     return res
+    
     def action_approve(self, check_state=True):
         user = self.env.user
 
@@ -214,7 +185,7 @@ class HrLeave(models.Model):
                         raise UserError("Only General Manager can approve this leave.")
 
                 leave._action_validate(check_state)
-                self._notify_employee()
+                # self._notify_employee()
 
 
         return True

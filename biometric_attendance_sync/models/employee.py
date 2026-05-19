@@ -14,17 +14,12 @@ class HrEmployee(models.Model):
     device_id = fields.Char(string="Device User ID")
     device_make = fields.Char(string="Device Make")
 
-    # date_from = fields.Date(required=True)
-    # date_to = fields.Date(required=True)
+    state_employee_exception = fields.Selection([
+        ('is_deliver', 'Deliver'),
+        ('is_exception_checkout', 'Exception Checkout')
+    ])
 
-    # monday = fields.Boolean()
-    # tuesday = fields.Boolean()
-    # wednesday = fields.Boolean()
-    # thursday = fields.Boolean()
-    # friday = fields.Boolean()
-    # saturday = fields.Boolean()
-    # sunday = fields.Boolean()
-
+    
     @api.model
     def fetch_attendance_from_middleware(self):
         url = "http://127.0.0.1:3000/api/v1/getAttendenceData"
@@ -48,13 +43,7 @@ class HrEmployeePublic(models.Model):
     device_id = fields.Char(string="Device ID", readonly=True)
     device_make = fields.Char(string="Make", readonly=True)
 
-    # date_from = fields.Date(required=True)
-    # date_to = fields.Date(required=True)
-    #
-    # monday = fields.Boolean()
-    # tuesday = fields.Boolean()
-    # wednesday = fields.Boolean()
-    # thursday = fields.Boolean()
-    # friday = fields.Boolean()
-    # saturday = fields.Boolean()
-    # sunday = fields.Boolean()
+    state_employee_exception = fields.Selection([
+        ('is_deliver', 'Deliver'),
+        ('is_exception_checkout', 'Exception Checkout')
+    ])

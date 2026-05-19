@@ -6,6 +6,8 @@ import pytz
 from collections import defaultdict
 from datetime import timedelta
 
+from odoo.tools.date_utils import weekend
+
 
 class AttendanceReportParser(models.AbstractModel):
     _name = 'report.biometric_attendance_sync.attendance_report_template'
@@ -66,7 +68,7 @@ class AttendanceReportParser(models.AbstractModel):
 
 
         date_from = fields.Datetime.to_datetime(data.get('date_from'))
-        date_to = fields.Datetime.to_datetime(data.get('date_to'))
+        date_to = fields.Datetime.to_datetime(data.get('date_to')) + timedelta(days=1)
 
 
 
@@ -85,26 +87,27 @@ class AttendanceReportParser(models.AbstractModel):
             # Work Days (WITHOUT intervals)
             # ========================
             work_days = set()
-
+            weekend_days = set()
+            #to calculate worked days for each employee
             if calendar:
 
                 working_weekdays = set(int(att.dayofweek) for att in calendar.attendance_ids)
+                weekend=(4,5)
 
                 current = date_from.date()
-                while current <= date_to.date():
-
+                while current < date_to.date():
+                    if current.weekday() in weekend:
+                        weekend_days.add(fields.Date.to_string(current))
                     if current.weekday() in working_weekdays:
                         work_days.add(fields.Date.to_string(current))
 
                     current += timedelta(days=1)
 
-            print("work_days", work_days)
-
 
             attendances = self.env['hr.attendance'].search([
                 ('employee_id', '=', emp.id),
                 ('check_in', '>=', date_from),
-                ('check_in', '<=', date_to),
+                ('check_in', '<', date_to),
             ])
 
             att_map = {
@@ -143,7 +146,7 @@ class AttendanceReportParser(models.AbstractModel):
                 ('employee_id', '=', emp.id),
                 ('state', '=', 'approved'),
                 ('permission_type', '=', 'mission'),
-                ('datetime_from', '<=', date_to),
+                ('datetime_from', '<', date_to),
                 ('datetime_to', '>=', date_from),
             ])
 
@@ -171,7 +174,7 @@ class AttendanceReportParser(models.AbstractModel):
             # ========================
             holidays = self.env['resource.calendar.leaves'].search([
                 ('resource_id', '=', False),
-                ('date_from', '<=', date_to),
+                ('date_from', '<', date_to),
                 ('date_to', '>=', date_from),
             ])
             print(holidays)
@@ -203,8 +206,17 @@ class AttendanceReportParser(models.AbstractModel):
             days = []
             current = date_from.date()
 
-            while current <= date_to.date():
+            while current < date_to.date():
                 day_str = fields.Date.to_string(current)
+                day_name = {
+                    'Monday': 'الاثنين',
+                    'Tuesday': 'الثلاثاء',
+                    'Wednesday': 'الأربعاء',
+                    'Thursday': 'الخميس',
+                    'Friday': 'الجمعة',
+                    'Saturday': 'السبت',
+                    'Sunday': 'الأحد',
+                }[current.strftime('%A')]
 
                 att = att_map.get(day_str)
                 delay_order = None
@@ -220,23 +232,21 @@ class AttendanceReportParser(models.AbstractModel):
                         early_counter += 1
                         early_order = early_counter
 
-                # ========================
-                # Status Logic (UPDATED)
-                # ========================
+
 
                 if day_str in holiday_days:
                     print(day_str)
                     status = 'holiday'
-                    print('her1')
                     current += timedelta(days=1)
                     continue
+                elif day_str in weekend_days:
+                    current += timedelta(days=1)
+                    continue
+                elif day_str not in work_days and day_str  not in weekend_days:
 
-                elif day_str not in work_days:
-                    print(day_str)
-                    print('her2')
-                    # status = 'off'
-                    current += timedelta(days=1)
-                    continue
+                    status = 'off'
+                    # current += timedelta(days=1)
+                    # continue
 
                 elif day_str in leave_map:
                     leave_info = leave_map[day_str]
@@ -272,6 +282,7 @@ class AttendanceReportParser(models.AbstractModel):
                 # ========================
                 days.append({
                     'date': day_str,
+                    'day_name': day_name,
                     'attendance': att,
                     'status': status,
 
@@ -282,7 +293,7 @@ class AttendanceReportParser(models.AbstractModel):
                     'early_order': early_order,
 
                     'is_mission': status == 'mission',
-                    # 'is_off': status == 'off',
+                    'is_off': status == 'off',
                     'is_leave': 'leave' in status,
                     'is_holiday': status == 'holiday',
                     'is_absent': status == 'absent',

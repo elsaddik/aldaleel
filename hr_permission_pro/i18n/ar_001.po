@@ -46,12 +46,12 @@ msgstr ""
 #. module: hr_permission_pro
 #: model_terms:ir.ui.view,arch_db:hr_permission_pro.view_permission_form
 msgid "Approve"
-msgstr ""
+msgstr "موافقة"
 
 #. module: hr_permission_pro
 #: model:ir.model.fields.selection,name:hr_permission_pro.selection__hr_permission__state__approved
 msgid "Approved"
-msgstr ""
+msgstr "تمت الموافقة"
 
 #. module: hr_permission_pro
 #: model:ir.model.fields,field_description:hr_permission_pro.field_hr_permission__message_attachment_count
@@ -78,17 +78,17 @@ msgstr ""
 #. module: hr_permission_pro
 #: model:ir.model.fields,field_description:hr_permission_pro.field_hr_permission__date
 msgid "Date"
-msgstr ""
+msgstr "التاريخ"
 
 #. module: hr_permission_pro
 #: model:ir.model.fields,field_description:hr_permission_pro.field_hr_permission__datetime_from
 msgid "Datetime From"
-msgstr ""
+msgstr "بداية الفترة"
 
 #. module: hr_permission_pro
 #: model:ir.model.fields,field_description:hr_permission_pro.field_hr_permission__datetime_to
 msgid "Datetime To"
-msgstr ""
+msgstr "نهاية الفترة"
 
 #. module: hr_permission_pro
 #: model:ir.model.fields,field_description:hr_permission_pro.field_hr_attendance__delay_display
@@ -103,7 +103,7 @@ msgstr ""
 #. module: hr_permission_pro
 #: model:ir.model.fields,field_description:hr_permission_pro.field_hr_permission__destination
 msgid "Destination"
-msgstr ""
+msgstr "الوجهة"
 
 #. module: hr_permission_pro
 #: model:ir.model.fields,field_description:hr_permission_pro.field_hr_attendance__display_name
@@ -116,12 +116,12 @@ msgstr "اسم العرض"
 #. module: hr_permission_pro
 #: model:ir.model.fields.selection,name:hr_permission_pro.selection__hr_permission__state__draft
 msgid "Draft"
-msgstr ""
+msgstr "مسودة"
 
 #. module: hr_permission_pro
 #: model:ir.model.fields,field_description:hr_permission_pro.field_hr_permission__duration
 msgid "Duration"
-msgstr ""
+msgstr "الفترة"
 
 #. module: hr_permission_pro
 #: model:ir.model.fields,field_description:hr_permission_pro.field_hr_attendance__early_display
@@ -136,17 +136,17 @@ msgstr ""
 #. module: hr_permission_pro
 #: model:ir.model.fields,field_description:hr_permission_pro.field_hr_permission__employee_id
 msgid "Employee"
-msgstr ""
+msgstr "الموظف"
 
 #. module: hr_permission_pro
 #: model:ir.model,name:hr_permission_pro.model_hr_permission
 msgid "Employee Permission"
-msgstr ""
+msgstr "مهمة موظف"
 
 #. module: hr_permission_pro
 #: model:ir.ui.menu,name:hr_permission_pro.menu_permission
 msgid "Employee Permissions"
-msgstr ""
+msgstr "مهمات الموظف"
 
 #. module: hr_permission_pro
 #: model:ir.model.fields,field_description:hr_permission_pro.field_hr_permission__message_follower_ids
@@ -166,12 +166,12 @@ msgstr ""
 #. module: hr_permission_pro
 #: model_terms:ir.ui.view,arch_db:hr_permission_pro.view_hr_logistic_form
 msgid "HR Logistic"
-msgstr ""
+msgstr " وسائل المواصلات"
 
 #. module: hr_permission_pro
 #: model_terms:ir.ui.view,arch_db:hr_permission_pro.view_hr_logistic_list
 msgid "HR Logistics"
-msgstr ""
+msgstr "وسائل المواصلات"
 
 #. module: hr_permission_pro
 #: model:ir.model.fields,field_description:hr_permission_pro.field_hr_permission__has_message
@@ -215,7 +215,7 @@ msgstr ""
 #. module: hr_permission_pro
 #: model:ir.model.fields,field_description:hr_permission_pro.field_hr_attendance__is_mission
 msgid "Is Mission"
-msgstr ""
+msgstr "مهمة"
 
 #. module: hr_permission_pro
 #: model:ir.model.fields,field_description:hr_permission_pro.field_hr_logistic__write_uid
@@ -232,7 +232,7 @@ msgstr ""
 #. module: hr_permission_pro
 #: model:ir.model.fields,field_description:hr_permission_pro.field_hr_permission__logistic_id
 msgid "Logistic"
-msgstr ""
+msgstr "وسيلة المواصلات"
 
 #. module: hr_permission_pro
 #: model:ir.model,name:hr_permission_pro.model_hr_logistic
@@ -242,12 +242,12 @@ msgstr ""
 #. module: hr_permission_pro
 #: model:ir.actions.act_window,name:hr_permission_pro.action_logistic
 msgid "Logistics"
-msgstr ""
+msgstr "وسائل المواصلات"
 
 #. module: hr_permission_pro
 #: model_terms:ir.ui.view,arch_db:hr_permission_pro.hr_leave_form_inherit_multi_approval_mangr
 msgid "Manager Approve"
-msgstr ""
+msgstr "موافقة المدير المباشر"
 
 #. module: hr_permission_pro
 #: model:ir.model.fields,field_description:hr_permission_pro.field_hr_permission__message_has_error
@@ -262,18 +262,18 @@ msgstr ""
 #. module: hr_permission_pro
 #: model:ir.model.fields.selection,name:hr_permission_pro.selection__hr_permission__permission_type__mission
 msgid "Mission"
-msgstr ""
+msgstr "مهمة"
 
 #. module: hr_permission_pro
 #: model:ir.model.fields,field_description:hr_permission_pro.field_hr_permission__mission_desc
 msgid "Mission Desc"
-msgstr ""
+msgstr "وصف المهمة"
 
 #. module: hr_permission_pro
 #: model:ir.model.fields,field_description:hr_permission_pro.field_hr_logistic__name
 #: model:ir.model.fields,field_description:hr_permission_pro.field_hr_permission__name
 msgid "Name"
-msgstr ""
+msgstr "الاسم"
 
 #. module: hr_permission_pro
 #: model:ir.model.fields,field_description:hr_permission_pro.field_hr_logistic__note
@@ -303,13 +303,13 @@ msgstr ""
 #. module: hr_permission_pro
 #: model:ir.model.fields,field_description:hr_permission_pro.field_hr_permission__permission_type
 msgid "Permission Type"
-msgstr ""
+msgstr "نوع المهمة"
 
 #. module: hr_permission_pro
 #: model:ir.actions.act_window,name:hr_permission_pro.action_permission
 #: model:ir.ui.menu,name:hr_permission_pro.menu_permission_root
 msgid "Permissions"
-msgstr ""
+msgstr "المهمات"
 
 #. module: hr_permission_pro
 #: model:ir.model.fields,field_description:hr_permission_pro.field_hr_permission__rating_ids
@@ -319,12 +319,12 @@ msgstr ""
 #. module: hr_permission_pro
 #: model_terms:ir.ui.view,arch_db:hr_permission_pro.view_permission_form
 msgid "Refuse"
-msgstr ""
+msgstr "رفض"
 
 #. module: hr_permission_pro
 #: model:ir.model.fields.selection,name:hr_permission_pro.selection__hr_permission__state__refused
 msgid "Refused"
-msgstr ""
+msgstr "رفض"
 
 #. module: hr_permission_pro
 #. odoo-python
@@ -350,7 +350,7 @@ msgstr "الحالة"
 #. module: hr_permission_pro
 #: model_terms:ir.ui.view,arch_db:hr_permission_pro.view_permission_form
 msgid "Submit"
-msgstr ""
+msgstr "تأكيد"
 
 #. module: hr_permission_pro
 #: model_terms:ir.ui.view,arch_db:hr_permission_pro.hr_leave_form_inherit_multi_approval
@@ -365,7 +365,7 @@ msgstr "الإجازات"
 #. module: hr_permission_pro
 #: model:ir.model.fields.selection,name:hr_permission_pro.selection__hr_permission__state__to_approve
 msgid "To Approve"
-msgstr ""
+msgstr "في انتظار الموافقة"
 
 #. module: hr_permission_pro
 #: model:ir.model.fields.selection,name:hr_permission_pro.selection__hr_leave__state__gm_approve
@@ -400,4 +400,4 @@ msgstr ""
 #. module: hr_permission_pro
 #: model:ir.ui.menu,name:hr_permission_pro.menu_logistic
 msgid "mission Logistics"
-msgstr ""
+msgstr "وسائل المواصلات"

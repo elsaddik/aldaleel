@@ -242,12 +242,8 @@ class AttendanceReportParser(models.AbstractModel):
                 elif day_str in weekend_days:
                     current += timedelta(days=1)
                     continue
-                elif day_str not in work_days and day_str  not in weekend_days:
-
+                elif day_str not in work_days:
                     status = 'off'
-                    # current += timedelta(days=1)
-                    # continue
-
                 elif day_str in leave_map:
                     leave_info = leave_map[day_str]
 

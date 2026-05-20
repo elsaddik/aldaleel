@@ -43,6 +43,7 @@ class AttendanceEngine:
 
 
         public_holidays = self.env['resource.calendar.leaves'].search([
+            ('resource_id', '=', False),
             ('date_from', '<=', start),
             ('date_to', '>=', end)
         ])

@@ -39,6 +39,7 @@ class AttendancePenalty(models.Model):
     def run_attendance_engine(self):
         engine = AttendanceEngine(self.env)
         employees = self.env['hr.employee'].search([])
+        # employees = self.env['hr.employee'].browse(27)
         start, end = engine.compute_period()
         for emp in employees:
             result = engine.analyze_employee(emp)

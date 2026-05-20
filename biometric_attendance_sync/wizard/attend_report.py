@@ -69,11 +69,7 @@ class AttendanceReportParser(models.AbstractModel):
 
         date_from = fields.Datetime.to_datetime(data.get('date_from'))
         date_to = fields.Datetime.to_datetime(data.get('date_to')) + timedelta(days=1)
-
-
-
         result = []
-
         for emp in employees:
 
             calendar = emp.resource_calendar_id
@@ -98,7 +94,7 @@ class AttendanceReportParser(models.AbstractModel):
                 while current < date_to.date():
                     if current.weekday() in weekend:
                         weekend_days.add(fields.Date.to_string(current))
-                    if current.weekday() in working_weekdays:
+                    elif current.weekday() in working_weekdays:
                         work_days.add(fields.Date.to_string(current))
 
                     current += timedelta(days=1)
@@ -169,9 +165,7 @@ class AttendanceReportParser(models.AbstractModel):
 
                     current += timedelta(days=1)
 
-            # ========================
-            # Holidays
-            # ========================
+
             holidays = self.env['resource.calendar.leaves'].search([
                 ('resource_id', '=', False),
                 ('date_from', '<', date_to),
@@ -231,8 +225,6 @@ class AttendanceReportParser(models.AbstractModel):
                     if att.is_early:
                         early_counter += 1
                         early_order = early_counter
-
-
 
                 if day_str in holiday_days:
                     print(day_str)

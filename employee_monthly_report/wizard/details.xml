@@ -1,0 +1,53 @@
+<odoo>
+
+    <record id="view_details_report_wizard_form" model="ir.ui.view">
+        <field name="name">details.report.wizard.form</field>
+        <field name="model">details.report.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Details Employee Report">
+
+                <group>
+                    <field name="date_from"/>
+                    <field name="date_to"/>
+                </group>
+
+                <footer>
+                    <button name="action_print_report"
+                            type="object"
+                            string="Print Report"
+                            class="btn-primary"/>
+
+                    <button string="Cancel"
+                            special="cancel"
+                            class="btn-secondary"/>
+                </footer>
+
+            </form>
+        </field>
+    </record>
+
+
+    <record id="action_server_details_report" model="ir.actions.server">
+        <field name="name">Details Report</field>
+        <field name="model_id" ref="hr.model_hr_employee"/>
+        <field name="binding_model_id" ref="hr.model_hr_employee"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+
+        <field name="code">
+            action = {
+            'type': 'ir.actions.act_window',
+            'name': 'Details Report',
+            'res_model': 'details.report.wizard',
+            'view_mode': 'form',
+            'target': 'new',
+            'context': {
+            'active_ids': records.ids
+            }
+            }
+        </field>
+
+    </record>
+
+</odoo>
+

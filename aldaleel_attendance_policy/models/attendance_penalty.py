@@ -62,7 +62,7 @@ class AttendancePenalty(models.Model):
                                <a href="#"
                                   data-oe-model="{alert._name}"
                                   data-oe-id="{alert.id}">
-                                  طلب رقم {alert.id}
+                                  الانذار {alert.id}
                                </a>
                                """)
 
@@ -85,17 +85,10 @@ class AttendancePenalty(models.Model):
                     hr_partners = hr_users.mapped('partner_id')
 
                     if hr_partners:
-                        alert._send_channel_notification(
+                        alert.send_channel_notification(
                             hr_partners,
                             message
                         )
-
-                # if emp.user_id and emp.user_id.partner_id:
-                #     alert.message_notify(
-                #         partner_ids=[emp.user_id.partner_id.id],
-                #         subject='Absence Warning',
-                #         body='⚠️ You have your first absence today',
-                #     )
 
                 result['absence'] = 0
             vals = {

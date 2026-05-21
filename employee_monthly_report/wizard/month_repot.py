@@ -41,7 +41,7 @@ class MonthlyReportWizard(models.TransientModel):
             leaves = self.env['hr.leave'].search([
                 ('employee_id', '=', emp.id),
                 ('state', '=', 'validate'),
-                ('holiday_status_id.id', 'not in', [76,86]),
+                ('holiday_status_id.id', 'not in', [84,86]),
                 ('request_date_from', '<=', self.date_to),
                 ('request_date_to', '>=', self.date_from),
             ])
@@ -58,7 +58,7 @@ class MonthlyReportWizard(models.TransientModel):
             leave_permissions = self.env['hr.leave'].search_count([
                 ('employee_id', '=', emp.id),
                 ('state', '=', 'validate'),
-                ('holiday_status_id.id', 'in', [76, 86]),
+                ('holiday_status_id.id', 'in', [84, 86]),
                 ('request_date_from', '<=', self.date_to),
                 ('request_date_to', '>=', self.date_from),
             ])

@@ -1,2 +1,2 @@
-from . import employee
-from . import report_data
+from . import month_repot
+from . import details_report

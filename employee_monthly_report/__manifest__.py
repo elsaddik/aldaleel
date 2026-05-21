@@ -4,9 +4,12 @@
     'depends': ['hr', 'hr_attendance', 'hr_holidays', 'mail'],
     'data': [
         'security/ir.model.access.csv',
-        'wizard/employee.xml',
-        'wizard/report_monthly.xml',
-        'wizard/report_action.xml',
+        'wizard/month_report.xml',
+        'wizard/details.xml',
+
+        'report/details_report.xml',
+        'report/report_monthly.xml',
+        'report/report_action.xml',
     ],
     'installable': True,
 }

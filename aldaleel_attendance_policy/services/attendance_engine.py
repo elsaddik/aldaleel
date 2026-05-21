@@ -95,7 +95,7 @@ class AttendanceEngine:
 
         if calendar_id and calendar_id.attendance_ids:
             working_days = set(int(att.dayofweek) for att in calendar_id.attendance_ids)
-            print(working_days)
+
         else:
             working_days =  {0,1,2,3,6}
 
@@ -141,13 +141,13 @@ class AttendanceEngine:
             )
             user_tz = pytz.timezone(tz_name)
             local_time_in = att.check_in.astimezone(user_tz)
-            # print(local_time_in,att.employee_id.name)
+
             local_time_out = att.check_out.astimezone(user_tz)
-            # print(local_time_out, att.employee_id.name)
+
             checkin = self.to_minutes(local_time_in)
-            # print(checkin,att.employee_id.name)
+
             start=self.policy.work_start_minutes + self.policy.grace_minutes
-            # print(start,att.employee_id.name)
+
             checkout = self.to_minutes(local_time_out)
 
 
@@ -155,13 +155,10 @@ class AttendanceEngine:
             if checkin > self.policy.absence_after_minutes:
                 absence += 1
             elif checkin > start:
-                # print(late)
-                # print(employee.name)
-                # print(checkin)
-                # print(local_time_in)
+
 
                 late += 1
-                # print(late)
+
                 late_hour += att.delay_minutes
 
             if att.check_out:
@@ -179,13 +176,9 @@ class AttendanceEngine:
 
         abs_from_late = late // self.policy.late_to_absence
         abs_from_early_out = early_leave // self.policy.late_to_absence
-        # print(late)
-        # print(early_leave)
-        # print(abs_from_late)
-        # print(abs_from_early_out)
+
         absence += (abs_from_late + abs_from_early_out)
-        # print(absence)
-        # print(early_leave)
+
         return {
             "late": late,
             "absence": absence,

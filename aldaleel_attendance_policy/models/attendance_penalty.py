@@ -1,5 +1,6 @@
 from odoo import models, fields, api,_
 from ..services.attendance_engine import AttendanceEngine
+from markupsafe import Markup
 
 class AttendancePenalty(models.Model):
     _name = "bank.attendance.penalty"
@@ -54,14 +55,47 @@ class AttendancePenalty(models.Model):
                     'employee_id': emp.id,
                     'date': fields.Date.today(),
                 })
+                if alert:
+                    message = Markup(f"""
+                               تم ملاحظة عدم تواجدك اليوم {emp.name}
+                               <br/>
+                               <a href="#"
+                                  data-oe-model="{alert._name}"
+                                  data-oe-id="{alert.id}">
+                                  طلب رقم {alert.id}
+                               </a>
+                               """)
 
+                    # 👤 إشعار الموظف
+                    if emp.user_id:
+                        alert.send_channel_notification(
+                            emp.user_id.partner_id,
+                            message,
+                        )
 
-                if emp.user_id and emp.user_id.partner_id:
-                    alert.message_notify(
-                        partner_ids=[emp.user_id.partner_id.id],
-                        subject='Absence Warning',
-                        body='⚠️ You have your first absence today',
-                    )
+                    admins = self.env.ref('base.group_system').user_ids.mapped('partner_id')
+                    if admins:
+                        alert.send_channel_notification(
+                            admins,
+                            message
+                        )
+
+                    # 🧑‍💼 إشعار HR
+                    hr_users = self.env.ref('aldaleel_attendance_policy.group_hr_payroll_user_custom').user_ids
+                    hr_partners = hr_users.mapped('partner_id')
+
+                    if hr_partners:
+                        alert._send_channel_notification(
+                            hr_partners,
+                            message
+                        )
+
+                # if emp.user_id and emp.user_id.partner_id:
+                #     alert.message_notify(
+                #         partner_ids=[emp.user_id.partner_id.id],
+                #         subject='Absence Warning',
+                #         body='⚠️ You have your first absence today',
+                #     )
 
                 result['absence'] = 0
             vals = {

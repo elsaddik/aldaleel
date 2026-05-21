@@ -1,6 +1,6 @@
 from odoo import models, fields, api
 from odoo.exceptions import ValidationError, UserError, AccessError
-
+from markupsafe import Markup
 
 class HrPermission(models.Model):
     _name = 'hr.permission'
@@ -137,19 +137,29 @@ class HrPermission(models.Model):
             # ✅ تغيير الحالة
             rec.state = 'approved'
 
+            message = Markup(f"""
+            تمت الموافقة على طلب {employee.name}
+            <br/>
+            <a href="#"
+               data-oe-model="{rec._name}"
+               data-oe-id="{rec.id}">
+               طلب رقم {rec.id}
+            </a>
+            """)
+
             # 👤 إشعار الموظف
             if employee.user_id:
                 rec._send_channel_notification(
                     employee.user_id.partner_id,
-                    f"تمت الموافقة على الطلب الخاص بك بواسطة {user.name}"
+                   message,
                 )
 
-            # 👑 إشعار Admins
+
             admins = self.env.ref('base.group_system').user_ids.mapped('partner_id')
             if admins:
                 rec._send_channel_notification(
                     admins,
-                    f"تمت الموافقة على طلب {employee.name}"
+                   message
                 )
 
             # 🧑‍💼 إشعار HR
@@ -159,7 +169,7 @@ class HrPermission(models.Model):
             if hr_partners:
                 rec._send_channel_notification(
                     hr_partners,
-                    f"تم اعتماد طلب الموظف {employee.name}"
+                   message
                 )
 
     def action_refuse(self):

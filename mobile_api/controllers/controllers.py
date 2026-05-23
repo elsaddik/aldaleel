@@ -192,7 +192,42 @@ class HrMobileAPI(http.Controller):
     #         "attachment_id": attachment.id
     #     })
 
+    @http.route('/api/v1/leaves/permissions', type='http', auth='none', methods=['GET'], csrf=False)
+    def get_leaves(self, **kwargs):
+        user, error = self._verify_token()
+        if error: return self._response(success=False, message=error, status=401)
 
+        # التعامل مع الـ Pagination
+        page = int(kwargs.get('page', 1))
+        limit = int(kwargs.get('limit', 10))
+        offset = (page - 1) * limit
+
+        employee = request.env['hr.employee'].sudo().search([('user_id', '=', user)], limit=1)
+
+        domain = [('employee_id', '=', employee.id), ('holiday_status_id.request_unit', '=', 'hour')]
+
+        # حساب العدد الإجمالي للصفحات
+        total_count = request.env['hr.leave'].sudo().search_count(domain)
+        leaves = request.env['hr.leave'].sudo().search(domain, limit=limit, offset=offset, order='date_from desc')
+
+        leave_data = []
+        for leave in leaves:
+            leave_data.append({
+                "id": leave.id,
+                "type": leave.holiday_status_id.name,
+                "from": str(leave.date_from),
+                "to": str(leave.date_to),
+                "days": leave.number_of_days,
+                "state": leave.state,
+
+            })
+
+        return self._response({
+            "total_records": total_count,
+            "total_pages": (total_count + limit - 1) // limit,
+            "current_page": page,
+            "records": leave_data
+        })
 
     @http.route('/api/v1/leaves', type='http', auth='none', methods=['GET'], csrf=False)
     def get_leaves(self, **kwargs):
@@ -206,7 +241,7 @@ class HrMobileAPI(http.Controller):
 
         employee = request.env['hr.employee'].sudo().search([('user_id', '=', user)], limit=1)
         print('employee',employee)
-        domain = [('employee_id', '=', employee.id)]
+        domain = [('employee_id', '=', employee.id),('holiday_status_id.request_unit', '=', 'day')]
 
         # حساب العدد الإجمالي للصفحات
         total_count = request.env['hr.leave'].sudo().search_count(domain)
@@ -254,6 +289,7 @@ class HrMobileAPI(http.Controller):
         # ✅ الدومين الجديد (حسب السنة فقط)
         domain = [
             ('resource_id', '=', False),
+            ('company_id', '=', employee.company_id.id),
             ('date_from', '>=', start_date),
             ('date_from', '<=', end_date),
         ]

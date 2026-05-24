@@ -51,19 +51,31 @@ class AttendancePenalty(models.Model):
                 ('period_start','=',start)
             ], limit=1)
             print(result['absence'],emp.name)
-            abs_dates = datetime.strptime(str(result['absence_dates'][0]), "%Y-%m-%d").date()
 
+            absence_dates = result.get('absence_dates')
+
+            if absence_dates:
+                abs_date = absence_dates[0]
+
+                if isinstance(abs_date, str):
+                    abs_date = datetime.strptime(abs_date, "%Y-%m-%d").date()
+                else:
+                    abs_date = abs_date.date() if hasattr(abs_date, "date") else abs_date
+            else:
+                abs_date = False
+
+            _logger.info("%s -> dates", result['absence_dates'][0])
             if result['absence'] == 1:
                 print(result['absence_dates'][0])
-                _logger.info("%s -> exist_alert", result['absence_dates'][0])
-                exist_alert = self.env['employee.alert'].search([('employee_id','=',emp.id),('date','=',abs_dates)], limit=1)
+
+                exist_alert = self.env['employee.alert'].search([('employee_id','=',emp.id),('date','=',abs_date)], limit=1)
                 _logger.info("%s -> exist_alert", exist_alert)
                 if not  exist_alert:
                     alert = self.env['employee.alert'].create({
                         'name': 'Absence Warning',
                         'message': 'First absence detected',
                         'employee_id': emp.id,
-                        'date':abs_dates,
+                        'date':abs_date,
                     })
                     if alert:
                         message = Markup(f"""

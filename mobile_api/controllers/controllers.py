@@ -431,6 +431,9 @@ class HrMobileAPI(http.Controller):
         })
 
 
+    def to_hours(self,dt):
+        return dt.hour + dt.minute / 60.0
+
     @http.route('/api/v1/leaves/apply', type='http', auth='none', methods=['POST'], csrf=False)
     def api_apply_leave(self, **kwargs):
         user_id, error = self._verify_token()
@@ -441,11 +444,14 @@ class HrMobileAPI(http.Controller):
         date_to = data.get('date_to')
 
         holiday_status_id = data.get('leave_type_id')
-        date_from = datetime.strptime(date_from, "%Y-%m-%d %H:%M:%S").date()
-        date_to = datetime.strptime(date_to, "%Y-%m-%d %H:%M:%S").date()
+        date_from = datetime.strptime(date_from, "%Y-%m-%d %H:%M:%S")
+        date_to = datetime.strptime(date_to, "%Y-%m-%d %H:%M:%S")
+        _logger.info("%s -> date_from", date_from)
+        _logger.info("%s -> date_to", date_to)
 
         try:
             user_env = request.env(user=user_id)
+
             employee = user_env['hr.employee'].sudo().search([('user_id', '=', user_id)], limit=1)
 
 
@@ -461,13 +467,19 @@ class HrMobileAPI(http.Controller):
                                       status=400)
             if not existing_leave:
 
+                hour_from = self.to_hours(date_from)
+                hour_to = self.to_hours(date_to)
+
+                _logger.info("%s -> employee", employee.name)
+                _logger.info("%s -> hour_from", hour_from)
+                _logger.info("%s -> hour_to", hour_to)
                 leave_vals = {
                     'employee_id': employee.id,
                     'holiday_status_id': int(holiday_status_id),
-                    # 'date_from': date_from,
-                    # 'date_to': date_to,
-                    'request_date_from': date_from,
-                    'request_date_to': date_to,
+                    'request_hour_from':hour_from,
+                    'request_hour_to': hour_to,
+                    'request_date_from': date_from.date(),
+                    'request_date_to': date_to.date(),
                     'name': data.get('reason', ''),
                 }
 

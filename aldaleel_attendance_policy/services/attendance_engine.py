@@ -164,7 +164,11 @@ class AttendanceEngine:
 
             elif checkin > start:
                 late += 1
-                absence_dates.append(att.check_in.date())
+                if late % self.policy.late_to_absence == 0:
+                    absence += 1
+                    _logger.info("%s -> employee", employee.name)
+                    _logger.info("%s -> late for abs", late)
+                    absence_dates.append(att.check_in.date())
 
                 late_hour += att.delay_minutes
 
@@ -182,9 +186,11 @@ class AttendanceEngine:
                         early_hour += att.early_minutes
                     if early_leave % self.policy.late_to_absence == 0:
                         absence += 1
+                        _logger.info("%s -> employee", employee.name)
+                        _logger.info("%s -> absence", absence)
                         absence_dates.append(att.check_in.date())
 
-
+        print(absence_dates)
         # abs_from_late = late // self.policy.late_to_absence
         # abs_from_early_out = early_leave // self.policy.late_to_absence
         #

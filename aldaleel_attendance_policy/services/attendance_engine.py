@@ -78,7 +78,7 @@ class AttendanceEngine:
             while d <= lv.request_date_to:
                 leave_dates.add(d)
                 d += timedelta(days=1)
-
+        _logger.info('%s -> leave_dates', leave_dates)
         # الأيام اللي فيها حضور
         attended_days = set(att.check_in.date() for att in attendances if att.check_in)
 

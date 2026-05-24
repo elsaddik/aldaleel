@@ -1,8 +1,9 @@
 from odoo import models, fields, api,_
 from ..services.attendance_engine import AttendanceEngine
 from markupsafe import Markup
+import logging
 from datetime import datetime, date
-
+_logger = logging.getLogger(__name__)
 class AttendancePenalty(models.Model):
     _name = "bank.attendance.penalty"
     _description = "Attendance Penalty"
@@ -54,8 +55,9 @@ class AttendancePenalty(models.Model):
 
             if result['absence'] == 1:
                 print(result['absence_dates'][0])
+                _logger.info("%s -> exist_alert", result['absence_dates'][0])
                 exist_alert = self.env['employee.alert'].search([('employee_id','=',emp.id),('date','=',abs_dates)], limit=1)
-                print('heee')
+                _logger.info("%s -> exist_alert", exist_alert)
                 if not  exist_alert:
                     alert = self.env['employee.alert'].create({
                         'name': 'Absence Warning',

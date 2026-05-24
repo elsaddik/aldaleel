@@ -23,7 +23,8 @@ class AttendanceEngine:
 
         # آخر يوم في الشهر
         last_day = calendar.monthrange(today.year, today.month)[1]
-        period_end = today.replace(day=last_day)
+        # period_end = today.replace(day=last_day)
+        period_end = today
 
         return start, period_end
 
@@ -44,6 +45,9 @@ class AttendanceEngine:
         early_leave = 0
         late_hour = 0
         early_hour = 0
+        absence_dates = []
+        late_absence_dates = []
+        early_absence_dates = []
 
 
         public_holidays = self.env['resource.calendar.leaves'].search([
@@ -77,7 +81,7 @@ class AttendanceEngine:
 
         # الأيام اللي فيها حضور
         attended_days = set(att.check_in.date() for att in attendances if att.check_in)
-        print(attended_days)
+
 
         missions = self.env['hr.permission'].search([
             ('employee_id', '=', employee.id),
@@ -120,13 +124,15 @@ class AttendanceEngine:
                 else:
                     _logger.info("%s -> absence", current)
                     absence += 1
+                    absence_dates.append(current)
+
 
             current += timedelta(days=1)
 
         _logger.info("above absence = %s", absence)
 
         for att in attendances:
-            if not att.check_in:
+            if not att.check_in or not att.check_out:
                 continue
             if att.employee_id.state_employee_exception == 'is_deliver':
                 continue
@@ -154,10 +160,11 @@ class AttendanceEngine:
             # print(att.check_in,checkin, att.check_out,checkout)
             if checkin > self.policy.absence_after_minutes:
                 absence += 1
+                absence_dates.append(att.check_in.date())
+
             elif checkin > start:
-
-
                 late += 1
+                absence_dates.append(att.check_in.date())
 
                 late_hour += att.delay_minutes
 
@@ -173,17 +180,26 @@ class AttendanceEngine:
                     else:
                         early_leave += 1
                         early_hour += att.early_minutes
+                    if early_leave % self.policy.late_to_absence == 0:
+                        absence += 1
+                        absence_dates.append(att.check_in.date())
 
-        abs_from_late = late // self.policy.late_to_absence
-        abs_from_early_out = early_leave // self.policy.late_to_absence
 
-        absence += (abs_from_late + abs_from_early_out)
+        # abs_from_late = late // self.policy.late_to_absence
+        # abs_from_early_out = early_leave // self.policy.late_to_absence
+        #
+        # absence += (abs_from_late + abs_from_early_out)
+        # absence_dates.append(early_absence_dates)
+        # absence_dates.append(late_absence_dates)
+
+        absence_dates.sort()
 
         return {
             "late": late,
             "absence": absence,
             "early_leave": early_leave,
             "delay_hours": late_hour,
-            "early_hours": early_hour
+            "early_hours": early_hour,
+            "absence_dates": absence_dates
         }
 

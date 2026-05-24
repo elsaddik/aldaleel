@@ -88,7 +88,7 @@ class HrAttendance(models.Model):
         for rec in self:
             rec.delay_minutes = 0
             rec.is_late = False
-            if rec.employee_id.state_employee_exception == 'is_delivery':
+            if rec.employee_id.state_employee_exception == 'is_deliver':
                 continue
             if not rec.check_in or not rec.employee_id:
                 continue

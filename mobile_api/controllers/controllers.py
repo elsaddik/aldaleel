@@ -193,7 +193,7 @@ class HrMobileAPI(http.Controller):
     #     })
 
     @http.route('/api/v1/leaves/permissions', type='http', auth='none', methods=['GET'], csrf=False)
-    def get_leaves(self, **kwargs):
+    def get_leaves_permissions(self, **kwargs):
         user, error = self._verify_token()
         if error: return self._response(success=False, message=error, status=401)
 

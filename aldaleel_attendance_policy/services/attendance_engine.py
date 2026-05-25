@@ -38,7 +38,7 @@ class AttendanceEngine:
             ('check_in', '<=', end),
 
 
-        ])
+        ], order='check_in desc')
 
         late = 0
         absence = 0
@@ -186,18 +186,20 @@ class AttendanceEngine:
             checkout = self.to_minutes(local_time_out)
 
 
-            # print(att.check_in,checkin, att.check_out,checkout)
-            _logger.info("%s -> chick_in", checkin)
+
             if checkin > self.policy.absence_after_minutes:
                 if att.check_in.date() in late_permission_dates :
+                    _logger.info("%s ->late_permission_dates from skip big abs", late_permission_dates)
                     continue
                 absence += 1
                 absence_dates.append(att.check_in.date())
 
             elif checkin > start:
                 if att.check_in.date() in late_permission_dates:
+                    _logger.info("%s ->late_permission_dates from abs late", late_permission_dates)
                     continue
                 late += 1
+                _logger.info("%s ->date form abs late", att.check_in.date())
                 if late % self.policy.late_to_absence == 0:
                     absence += 1
                     _logger.info("%s -> employee", employee.name)
@@ -211,16 +213,20 @@ class AttendanceEngine:
                 exec_checkout = 895
 
                 if checkout < (self.policy.checkout_minutes - (self.policy.grace_minutes-5)):
-                    if att.check_in.date() in early_absence_dates:
+                    if att.check_in.date() in early_permission_dates:
+                        _logger.info("%s ->early permission date", att.check_in.date())
                         continue
+
                     if att.employee_id.state_employee_exception == 'is_exception_checkout':
-                        # print(checkout ,exec_checkout)
+
                         if checkout < exec_checkout :
                             early_leave += 1
+
                             early_hour += att.early_minutes
                     else:
                         early_leave += 1
                         early_hour += att.early_minutes
+                    _logger.info("%s ->date form early date", att.check_out.date())
                     if early_leave % self.policy.late_to_absence == 0:
                         absence += 1
                         _logger.info("%s -> employee", employee.name)

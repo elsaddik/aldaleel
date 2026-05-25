@@ -158,6 +158,7 @@ class AttendanceEngine:
 
 
             # print(att.check_in,checkin, att.check_out,checkout)
+            _logger.info("%s -> chick_in", checkin)
             if checkin > self.policy.absence_after_minutes:
                 absence += 1
                 absence_dates.append(att.check_in.date())

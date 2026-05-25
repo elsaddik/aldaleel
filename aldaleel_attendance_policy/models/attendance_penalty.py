@@ -50,71 +50,130 @@ class AttendancePenalty(models.Model):
                 ('employee_id','=',emp.id),
                 ('period_start','=',start)
             ], limit=1)
-            print(result['absence'],emp.name)
+            absence_dates = result.get('absence_dates', [])
+            absence_count = result.get('absence', 0)
 
-            absence_dates = result.get('absence_dates')
+            # أول يوم غياب في الفترة
+            first_abs_date = absence_dates[0] if absence_dates else False
 
-            if absence_dates:
-                abs_date = absence_dates[0]
+            # هل الموظف أخد إنذار غياب في نفس الشهر؟
+            existing_warning = self.env['employee.alert'].search([
+                ('employee_id', '=', emp.id),
+                ('name', '=', 'Absence Warning'),
+                ('date', '>=', start),
+                ('date', '<=', end),
+            ], limit=1)
 
-                if isinstance(abs_date, str):
-                    abs_date = datetime.strptime(abs_date, "%Y-%m-%d").date()
-                else:
-                    abs_date = abs_date.date() if hasattr(abs_date, "date") else abs_date
-            else:
-                abs_date = False
+            # أول غياب في الشهر → إنذار فقط
+            if absence_count > 0 and not existing_warning and first_abs_date:
 
-            _logger.info("%s -> dates", result['absence_dates'][0])
-            if result['absence'] == 1:
-                print(result['absence_dates'][0])
+                alert = self.env['employee.alert'].create({
+                    'name': 'Absence Warning',
+                    'message': 'First absence detected',
+                    'employee_id': emp.id,
+                    'date': first_abs_date,
+                })
 
-                exist_alert = self.env['employee.alert'].search([('employee_id','=',emp.id),('date','=',abs_date)], limit=1)
-                _logger.info("%s -> exist_alert", exist_alert)
-                if not  exist_alert:
-                    alert = self.env['employee.alert'].create({
-                        'name': 'Absence Warning',
-                        'message': 'First absence detected',
-                        'employee_id': emp.id,
-                        'date':abs_date,
-                    })
-                    if alert:
-                        message = Markup(f"""
-                                   تم ملاحظة عدم تواجدك اليوم {emp.name}
-                                   <br/>
-                                   <a href="#"
-                                      data-oe-model="{alert._name}"
-                                      data-oe-id="{alert.id}">
-                                      الانذار {alert.id}
-                                   </a>
-                                   """)
+                if alert:
+                    message = Markup(f"""
+                        تم ملاحظة عدم تواجدك اليوم {emp.name}
+                        <br/>
+                        <a href="#"
+                           data-oe-model="{alert._name}"
+                           data-oe-id="{alert.id}">
+                           الانذار {alert.id}
+                        </a>
+                    """)
 
-                        # 👤 إشعار الموظف
-                        if emp.user_id:
-                            alert.send_channel_notification(
-                                emp.user_id.partner_id,
-                                message,
-                            )
+                    # 👤 إشعار الموظف
+                    if emp.user_id:
+                        alert.send_channel_notification(
+                            emp.user_id.partner_id,
+                            message,
+                        )
 
-                        admins = self.env.ref('base.group_system').user_ids.mapped('partner_id')
-                        if admins:
-                            alert.send_channel_notification(
-                                admins,
-                                message
-                            )
+                    # 👨‍💻 إشعار الأدمن
+                    admins = self.env.ref('base.group_system').user_ids.mapped('partner_id')
 
-                        # 🧑‍💼 إشعار HR
-                        hr_users = self.env.ref('aldaleel_attendance_policy.group_hr_payroll_user_custom').user_ids
-                        hr_partners = hr_users.mapped('partner_id')
+                    if admins:
+                        alert.send_channel_notification(
+                            admins,
+                            message
+                        )
 
-                        if hr_partners:
-                            alert.send_channel_notification(
-                                hr_partners,
-                                message
-                            )
-                    result['absence'] = 0
+                    # 🧑‍💼 إشعار HR
+                    hr_users = self.env.ref(
+                        'aldaleel_attendance_policy.group_hr_payroll_user_custom'
+                    ).user_ids
 
-            elif result['absence'] > 1:
-                result["absence"] -=1
+                    hr_partners = hr_users.mapped('partner_id')
+
+                    if hr_partners:
+                        alert.send_channel_notification(
+                            hr_partners,
+                            message
+                        )
+
+            if absence_count > 0:
+                absence_count -= 1
+            result['absence'] = absence_count
+            #
+            #
+            # absence_dates = result.get('absence_dates', [])
+            #
+            # abs_date = absence_dates[0] if absence_dates else False
+            # _logger.info("%s -> dates", abs_date)
+            # if result['absence'] == 1:
+            #     print(result['absence_dates'][0])
+            #
+            #     exist_alert = self.env['employee.alert'].search([('employee_id','=',emp.id),('date','=',abs_date)], limit=1)
+            #     _logger.info("%s -> exist_alert", exist_alert)
+            #     if not  exist_alert:
+            #         alert = self.env['employee.alert'].create({
+            #             'name': 'Absence Warning',
+            #             'message': 'First absence detected',
+            #             'employee_id': emp.id,
+            #             'date':abs_date,
+            #         })
+            #         if alert:
+            #             message = Markup(f"""
+            #                        تم ملاحظة عدم تواجدك اليوم {emp.name}
+            #                        <br/>
+            #                        <a href="#"
+            #                           data-oe-model="{alert._name}"
+            #                           data-oe-id="{alert.id}">
+            #                           الانذار {alert.id}
+            #                        </a>
+            #                        """)
+            #
+            #             # 👤 إشعار الموظف
+            #             if emp.user_id:
+            #                 alert.send_channel_notification(
+            #                     emp.user_id.partner_id,
+            #                     message,
+            #                 )
+            #
+            #             admins = self.env.ref('base.group_system').user_ids.mapped('partner_id')
+            #             if admins:
+            #                 alert.send_channel_notification(
+            #                     admins,
+            #                     message
+            #                 )
+            #
+            #             # 🧑‍💼 إشعار HR
+            #             hr_users = self.env.ref('aldaleel_attendance_policy.group_hr_payroll_user_custom').user_ids
+            #             hr_partners = hr_users.mapped('partner_id')
+            #
+            #             if hr_partners:
+            #                 alert.send_channel_notification(
+            #                     hr_partners,
+            #                     message
+            #                 )
+            #     result['absence'] = 0
+            #
+            # elif result['absence'] > 1:
+            #     result["absence"] -=1
+            #
             vals = {
                 "employee_id": emp.id,
                 "period_start": start,

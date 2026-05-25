@@ -71,14 +71,42 @@ class AttendanceEngine:
             ('request_date_to', '>=', start),
             ('state', '=', 'validate')
         ])
-
+        late_permission_dates = set()
+        early_permission_dates = set()
         leave_dates = set()
+
+        LATE_PERMISSION_ID = 86
+        EARLY_PERMISSION_ID = 84
+
         for lv in leaves:
-            d = lv.request_date_from
-            while d <= lv.request_date_to:
-                leave_dates.add(d)
-                d += timedelta(days=1)
+
+            # ✅ إذن تأخير
+            if  lv.holiday_status_id.id == LATE_PERMISSION_ID:
+                late_permission_dates.add(lv.request_date_from)
+
+            # ✅ إذن خروج مبكر
+            elif  lv.holiday_status_id.id == EARLY_PERMISSION_ID:
+                early_permission_dates.add(lv.request_date_from)
+
+            # ✅ إجازات عادية
+            else:
+                d = lv.request_date_from
+
+                while d <= lv.request_date_to:
+                    leave_dates.add(d)
+                    d += timedelta(days=1)
+
         _logger.info('%s -> leave_dates', leave_dates)
+        _logger.info('%s -> late_permission_dates', late_permission_dates)
+        _logger.info('%s -> early_permission_dates', early_permission_dates)
+
+        # leave_dates = set()
+        # for lv in leaves:
+        #     d = lv.request_date_from
+        #     while d <= lv.request_date_to:
+        #         leave_dates.add(d)
+        #         d += timedelta(days=1)
+        # _logger.info('%s -> leave_dates', leave_dates)
         # الأيام اللي فيها حضور
         attended_days = set(att.check_in.date() for att in attendances if att.check_in)
 
@@ -136,7 +164,8 @@ class AttendanceEngine:
                 continue
             if att.employee_id.state_employee_exception == 'is_deliver':
                 continue
-
+            # if att.check_in.date() in leave_dates or att.check_in.date() in mission_dates:
+            #     continue
             employee = att.employee_id
 
             tz_name = (
@@ -160,10 +189,14 @@ class AttendanceEngine:
             # print(att.check_in,checkin, att.check_out,checkout)
             _logger.info("%s -> chick_in", checkin)
             if checkin > self.policy.absence_after_minutes:
+                if att.check_in.date() in late_permission_dates :
+                    continue
                 absence += 1
                 absence_dates.append(att.check_in.date())
 
             elif checkin > start:
+                if att.check_in.date() in late_permission_dates:
+                    continue
                 late += 1
                 if late % self.policy.late_to_absence == 0:
                     absence += 1
@@ -176,7 +209,10 @@ class AttendanceEngine:
             if att.check_out:
                 # checkout = self.to_minutes(att.check_out)
                 exec_checkout = 895
+
                 if checkout < (self.policy.checkout_minutes - (self.policy.grace_minutes-5)):
+                    if att.check_in.date() in early_absence_dates:
+                        continue
                     if att.employee_id.state_employee_exception == 'is_exception_checkout':
                         # print(checkout ,exec_checkout)
                         if checkout < exec_checkout :

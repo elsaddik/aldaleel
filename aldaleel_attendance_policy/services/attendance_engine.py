@@ -187,22 +187,16 @@ class AttendanceEngine:
             checkout = self.to_minutes(local_time_out)
 
 
-            if checkin > self.policy.absence_after_minutes:
-                if att.check_in.date() in late_permission_dates :
-                    _logger.info("%s ->late_permission_dates from skip big abs", late_permission_dates)
-                    continue
+            if checkin > self.policy.absence_after_minutes and   att.check_in.date() not in late_permission_dates:
                 absence += 1
                 absence_dates.append(att.check_in.date())
+                _logger.info("%s ->big lat", att.check_in.date())
 
-            elif checkin > start:
-                if att.check_in.date() in late_permission_dates:
-                    _logger.info("%s ->late_permission_dates from abs late", late_permission_dates)
-                    continue
+            elif checkin > start and   att.check_in.date() not in late_permission_dates:
                 late += 1
                 _logger.info("%s ->date form abs late", att.check_in.date())
                 if late % self.policy.late_to_absence == 0:
                     absence += 1
-                    _logger.info("%s -> employee", employee.name)
                     _logger.info("%s -> late for abs", late)
                     absence_dates.append(att.check_in.date())
 
@@ -211,10 +205,8 @@ class AttendanceEngine:
             if att.check_out:
                 # checkout = self.to_minutes(att.check_out)
                 exec_checkout = 895
-                if checkout < (self.policy.checkout_minutes - (self.policy.grace_minutes-5)):
-                    if att.check_in.date() in early_permission_dates :
-                        _logger.info("%s ->early permission date", att.check_in.date())
-                        continue
+                if checkout < (self.policy.checkout_minutes - (self.policy.grace_minutes-5))  and att.check_in.date() not in early_permission_dates:
+
                     if att.employee_id.state_employee_exception == 'is_exception_checkout':
 
                         if checkout < exec_checkout :

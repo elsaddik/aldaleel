@@ -156,8 +156,9 @@
                                                         <span class="text-muted">جدول</span>
                                                     </t>
 
-                                                    <!-- إجازة بأنواعها -->
-                                                    <t t-if="d.get('is_leave')">
+
+<!--                                                    <t t-if="d.get('is_leave')">-->
+                                                    <t t-if="d.get('leave_type')">
                                                         <span class="text-info fw-bold">
                                                             <t t-esc="d.get('leave_type') or 'إجازة'"/>
                                                         </span>

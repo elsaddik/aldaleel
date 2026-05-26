@@ -120,6 +120,7 @@ class AttendanceReportParser(models.AbstractModel):
                 ('request_date_from', '<=', date_to.date()),
                 ('request_date_to', '>=', date_from.date()),
             ])
+            print('leaves',leaves)
 
             leave_map = {}
 
@@ -190,6 +191,7 @@ class AttendanceReportParser(models.AbstractModel):
             paid_id = 1
             sick_id = 2
             early_id = 84
+            # early_id = 77
             late_id = 86
             urgent_id = 87
             died_id = 89
@@ -199,7 +201,7 @@ class AttendanceReportParser(models.AbstractModel):
             # ========================
             days = []
             current = date_from.date()
-
+            print('leave map',leave_map)
             while current < date_to.date():
                 day_str = fields.Date.to_string(current)
                 day_name = {
@@ -282,7 +284,8 @@ class AttendanceReportParser(models.AbstractModel):
 
                     'is_mission': status == 'mission',
                     'is_off': status == 'off',
-                    'is_leave': 'leave' in status,
+                    'is_leave': 'leave'  or 'permission_early' or 'permission_late' or 'sick_leave' or 'paid_leave' or 'death_leave' or 'urgent_leave' in status,
+
                     'is_holiday': status == 'holiday',
                     'is_absent': status == 'absent',
                 })

@@ -106,7 +106,7 @@ class HrAttendance(models.Model):
             leave = self.env['hr.leave'].search([
                 ('employee_id', '=', rec.employee_id.id),
                 ('request_date_from', '=', check_in.date()),
-                ('holiday_status_id.request_unit', '=', 'hour'),
+                ('holiday_status_id.id', '=', 86),
                 ('state', '=', 'validate')
             ], limit=1)
 
@@ -125,7 +125,7 @@ class HrAttendance(models.Model):
             start_hour = min(attendance_lines.mapped('hour_from'))
 
             if policy:
-                start_hour += (policy.grace_minutes / 60)
+                start_hour += ((policy.grace_minutes+1) / 60)
 
             start_dt = self._float_to_datetime(check_in, start_hour)
 
@@ -162,7 +162,7 @@ class HrAttendance(models.Model):
             leave = self.env['hr.leave'].search([
                 ('employee_id', '=', rec.employee_id.id),
                 ('request_date_from', '=', check_out.date()),
-                ('holiday_status_id.request_unit', '=', 'hour'),
+                ('holiday_status_id.id', '=', 84),
                 ('state', '=', 'validate')
             ], limit=1)
 

@@ -212,6 +212,8 @@ class AttendanceEngine:
                         if checkout < exec_checkout :
                             early_leave += 1
                             early_hour += att.early_minutes
+                        else:
+                            continue
                     else:
                         early_leave += 1
                         early_hour += att.early_minutes

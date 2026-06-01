@@ -180,7 +180,7 @@ class AttendanceReportParser(models.AbstractModel):
                 while current <= h.date_to.date():
                     holiday_days.add(fields.Date.to_string(current))
                     current += timedelta(days=1)
-            print('holidays',holiday_days)
+
             # ========================
             # Counters
             # ========================
@@ -217,9 +217,12 @@ class AttendanceReportParser(models.AbstractModel):
                 att = att_map.get(day_str)
                 delay_order = None
                 early_order = None
+                big_late = False
 
                 # Counters
                 if att:
+                    if att.is_abs:
+                        big_late= True
                     if att.is_late:
                         late_counter += 1
                         delay_order = late_counter
@@ -227,6 +230,7 @@ class AttendanceReportParser(models.AbstractModel):
                     if att.is_early:
                         early_counter += 1
                         early_order = early_counter
+
 
                 if day_str in holiday_days:
                     print(day_str)
@@ -260,7 +264,8 @@ class AttendanceReportParser(models.AbstractModel):
                 # ✅ NEW: mission قبل attendance
                 elif day_str in mission_map:
                     status = 'mission'
-
+                elif big_late:
+                    status = 'big_late'
                 elif att:
                     status = 'present'
 
@@ -287,6 +292,7 @@ class AttendanceReportParser(models.AbstractModel):
                     'is_leave': 'leave'  or 'permission_early' or 'permission_late' or 'sick_leave' or 'paid_leave' or 'death_leave' or 'urgent_leave' in status,
 
                     'is_holiday': status == 'holiday',
+                    'is_big_late': status == 'big_late',
                     'is_absent': status == 'absent',
                 })
 

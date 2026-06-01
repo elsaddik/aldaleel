@@ -16,6 +16,7 @@ class HrAttendance(models.Model):
     early_minutes = fields.Float(compute="_compute_early", store=True)
 
     is_late = fields.Boolean(compute="_compute_delay", store=True)
+    is_abs = fields.Boolean(compute="_compute_delay",store=True)
     is_early = fields.Boolean(compute="_compute_early", store=True)
     is_mission = fields.Boolean(compute="_compute_mission", store=True)
 
@@ -86,8 +87,10 @@ class HrAttendance(models.Model):
         policy = self.env['bank.attendance.policy'].search([], limit=1)
 
         for rec in self:
+
             rec.delay_minutes = 0
             rec.is_late = False
+            rec.is_abs = False
             if rec.employee_id.state_employee_exception == 'is_deliver':
                 continue
             if not rec.check_in or not rec.employee_id:
@@ -123,15 +126,24 @@ class HrAttendance(models.Model):
                 continue
 
             start_hour = min(attendance_lines.mapped('hour_from'))
-
+            hour_abs = min(attendance_lines.mapped('hour_from'))
+            print('houe',hour_abs)
             if policy:
                 start_hour += ((policy.grace_minutes+1) / 60)
+                hour_abs +=  (((policy.grace_minutes*2)+1) / 60)
+
 
             start_dt = self._float_to_datetime(check_in, start_hour)
+            abs_dt = self._float_to_datetime(check_in, hour_abs)
 
+            # print(hour_abs)
             if check_in <= start_dt:
                 continue
-
+            print('abs date', abs_dt)
+            print('check in', check_in)
+            if check_in >= abs_dt:
+                rec.is_abs = True
+                continue
             rec.delay_minutes = (check_in - start_dt).total_seconds() / 60
             rec.is_late = rec.delay_minutes > 0
 
@@ -183,7 +195,8 @@ class HrAttendance(models.Model):
                 grace_minutes =policy.grace_minutes
                 end_hour -= (grace_minutes / 60) - (5/60)
             end_dt = self._float_to_datetime(check_out, end_hour)
-
+            if rec.is_abs:
+                continue
             if check_out >= end_dt:
                 continue
             exec_checkout_dt = self._float_to_datetime(check_out, exec_checkout)

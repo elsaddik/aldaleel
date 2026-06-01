@@ -686,20 +686,20 @@ class HrMobileAPI(http.Controller):
 
         try:
 
-            # existing_loan = request.env['hr.employee'].sudo().browse(employee.id).mapped('salary_attachment_ids')
-            # print(existing_loan.salary_attachment_ids)
-            # if employee.salary_attachment_ids:
-            #     running_loans = employee.salary_attachment_ids.filtered(
-            #         lambda l: l.state in ['open']
-            #     )
-            #
-            #     if running_loans:
-            #         return self._response(
-            #             success=False,
-            #             message="You already have a loan request in progress.",
-            #             status=400
-            #         )
-           
+            existing_loan = request.env['hr.employee'].sudo().browse(employee.id).mapped('salary_attachment_ids')
+            print(existing_loan.salary_attachment_ids)
+            if employee.salary_attachment_ids:
+                running_loans = employee.salary_attachment_ids.filtered(
+                    lambda l: l.state in ['open']
+                )
+
+                if running_loans:
+                    return self._response(
+                        success=False,
+                        message="You already have a loan request in progress.",
+                        status=400
+                    )
+
 
             loan = request.env['hr.salary.attachment'].sudo().create({
                 'employee_ids': [(6, 0, [employee.id])],
@@ -711,8 +711,7 @@ class HrMobileAPI(http.Controller):
                 'duration_type': data.get('duration_type'),
                 'description': data.get('description', '')
             })
-            print("Loan ID:", loan.id)
-            print("Employees IDs:", loan.employee_ids.ids)
+            
 
             return self._response({
                 "loan_id": loan.id,
@@ -729,34 +728,3 @@ class HrMobileAPI(http.Controller):
             )
 
 
-    # @http.route('/api/v1/loans/apply', type='http', auth='none', methods=['POST'], csrf=False)
-    # def apply_loan(self, **kwargs):
-    #     user, error = self._verify_token()
-    #     if error: return self._response(success=False, message=error, status=401)
-    #
-    #     data = self._get_json_data()
-    #     employee = request.env['hr.employee'].sudo().search([('user_id', '=', user)], limit=1)
-    #     print(data)
-    #     try:
-    #         # duration type is one, limited
-    #
-    #         input_id = 4  #on server
-    #
-    #         loan = request.env['hr.salary.attachment'].sudo().create({
-    #             'employee_ids': [(6, 0, [employee.id])],
-    #             'other_input_type_id':input_id ,
-    #             'monthly_amount': data.get('monthly_amount'),
-    #             'company_id': data.get('company_id'),
-    #             'total_amount': data.get('total_amount',''),
-    #             'date_start': data.get('date_start',''),
-    #             'duration_type': data.get('duration_type'),
-    #             'description': data.get('description', '')
-    #         })
-    #         return self._response({"loan_id": loan.id,
-    #                                "employee_ids":employee.id,
-    #                                "monthly_amount":loan.monthly_amount,
-    #                                "total_amount": loan.total_amount,
-    #                               }, message="Loan request submitted")
-    #     except Exception as e:
-    #         return self._response(success=False, message=str(e), status=400)
-    #

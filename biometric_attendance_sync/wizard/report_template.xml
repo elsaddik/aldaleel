@@ -147,9 +147,9 @@
                                                 <td>
 
                                                     <!-- عطلة رسمية -->
-<!--                                                    <t t-if="d.get('is_holiday')">-->
-<!--                                                        <span class="text-primary fw-bold">عطلة رسمية</span>-->
-<!--                                                    </t>-->
+                                                    <!--                                                    <t t-if="d.get('is_holiday')">-->
+                                                    <!--                                                        <span class="text-primary fw-bold">عطلة رسمية</span>-->
+                                                    <!--                                                    </t>-->
 
 
                                                     <t t-if="d.get('is_off')">
@@ -157,7 +157,7 @@
                                                     </t>
 
 
-<!--                                                    <t t-if="d.get('is_leave')">-->
+                                                    <!--                                                    <t t-if="d.get('is_leave')">-->
                                                     <t t-if="d.get('leave_type')">
                                                         <span class="text-info fw-bold">
                                                             <t t-esc="d.get('leave_type') or 'إجازة'"/>
@@ -173,6 +173,11 @@
                                                     </t>
 
                                                     <!-- غياب -->
+                                                    <t t-elif="d.get('is_big_late')">
+                                                        <span class="text-danger fw-bold">غياب (تأخير بعد 9:30)</span>
+                                                    </t>
+
+                                                    <!-- غياب -->
                                                     <t t-elif="d.get('is_absent')">
                                                         <span class="text-danger fw-bold">غياب بدون مبرر</span>
                                                     </t>
@@ -181,18 +186,40 @@
                                                     <t t-elif="d.get('attendance')">
 
                                                         <t t-set="st" t-value="[]"/>
-
-                                                        <!-- تأخير مع رقم -->
-                                                        <t t-if="d.get('attendance').is_late">
+                                                        <!-- تأخير -->
+                                                        <t t-if="d.get('attendance').is_late and (d.get('delay_order') % 3 != 0)">
                                                             <t t-set="st"
                                                                t-value="st + ['تأخير (المرة %s)' % d.get('delay_order')]"/>
                                                         </t>
 
-                                                        <!-- خروج مبكر مع رقم -->
-                                                        <t t-if="d.get('attendance').is_early">
+                                                        <!-- خروج مبكر -->
+                                                        <t t-if="d.get('attendance').is_early and (d.get('early_order') % 3 != 0)">
                                                             <t t-set="st"
                                                                t-value="st + ['خروج مبكر (المرة %s)' % d.get('early_order')]"/>
                                                         </t>
+
+                                                        <!-- بدلهم غياب -->
+                                                        <t t-if="d.get('attendance').is_late and (d.get('delay_order') % 3 == 0)">
+                                                            <t t-set="st"
+                                                               t-value="st + ['غياب 3 تأخيرات']"/>
+                                                        </t>
+
+                                                        <t t-if="d.get('attendance').is_early and (d.get('early_order') % 3 == 0)">
+                                                            <t t-set="st"
+                                                               t-value="st + ['غياب 3 خروج مبكر']"/>
+                                                        </t>
+
+                                                        <!--                                                        &lt;!&ndash; تأخير مع رقم &ndash;&gt;-->
+                                                        <!--                                                        <t t-if="d.get('attendance').is_late">-->
+                                                        <!--                                                            <t t-set="st"-->
+                                                        <!--                                                               t-value="st + ['تأخير (المرة %s)' % d.get('delay_order')]"/>-->
+                                                        <!--                                                        </t>-->
+
+                                                        <!--                                                        &lt;!&ndash; خروج مبكر مع رقم &ndash;&gt;-->
+                                                        <!--                                                        <t t-if="d.get('attendance').is_early">-->
+                                                        <!--                                                            <t t-set="st"-->
+                                                        <!--                                                               t-value="st + ['خروج مبكر (المرة %s)' % d.get('early_order')]"/>-->
+                                                        <!--                                                        </t>-->
 
                                                         <t t-if="st">
                                                             <span t-esc="' / '.join(st)"/>

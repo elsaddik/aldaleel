@@ -16,7 +16,8 @@ class AttendanceEngine:
         return dt.hour * 60 + dt.minute
 
     def compute_period(self):
-        today = fields.Date.today()
+        # today = fields.Date.today()
+        today = fields.Date.from_string('2026-05-31')
 
         # بداية الشهر
         start = today.replace(day=1)
@@ -27,6 +28,18 @@ class AttendanceEngine:
         period_end = today
 
         return start, period_end
+    # def compute_period(self):
+    #     today = fields.Date.today()
+    #
+    #     # بداية الشهر
+    #     start = today.replace(day=1)
+    #
+    #     # آخر يوم في الشهر
+    #     last_day = calendar.monthrange(today.year, today.month)[1]
+    #     # period_end = today.replace(day=last_day)
+    #     period_end = today
+    #
+    #     return start, period_end
 
     def analyze_employee(self, employee):
         start, end = self.compute_period()
@@ -192,7 +205,7 @@ class AttendanceEngine:
                 absence_dates.append(att.check_in.date())
                 _logger.info("%s ->big lat", att.check_in.date())
 
-            elif checkin > start and   att.check_in.date() not in late_permission_dates:
+            elif checkin > start and  not att.is_abs and att.check_in.date() not in late_permission_dates:
                 late += 1
                 _logger.info("%s ->date form abs late", att.check_in.date())
                 if late % self.policy.late_to_absence == 0:
@@ -205,7 +218,7 @@ class AttendanceEngine:
             if att.check_out:
                 # checkout = self.to_minutes(att.check_out)
                 exec_checkout = 895
-                if checkout < (self.policy.checkout_minutes - (self.policy.grace_minutes-5))  and att.check_in.date() not in early_permission_dates:
+                if checkout < (self.policy.checkout_minutes - (self.policy.grace_minutes-5)) and  not att.is_abs and att.check_in.date() not in early_permission_dates:
 
                     if att.employee_id.state_employee_exception == 'is_exception_checkout':
 

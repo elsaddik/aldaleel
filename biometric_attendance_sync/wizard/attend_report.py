@@ -176,7 +176,9 @@ class AttendanceReportParser(models.AbstractModel):
 
             holiday_days = set()
             for h in holidays:
-                current = h.date_from.date()
+                # current = h.date_from.date()
+                current = h.date_from.date() + timedelta(days=1)
+                # current = h.date_from.date()
                 while current <= h.date_to.date():
                     holiday_days.add(fields.Date.to_string(current))
                     current += timedelta(days=1)
@@ -250,7 +252,7 @@ class AttendanceReportParser(models.AbstractModel):
 
                     elif leave_info['type_id'] == sick_id:
                         status = 'sick_leave'
-                    elif leave_info['type_id'] == early_id:
+                    elif leave_info['type_id'] == early_id and not big_late :
                         status = 'permission_early'
                     elif leave_info['type_id'] == late_id:
                         status = 'permission_late'

@@ -34,17 +34,29 @@ class HrLeave(models.Model):
             # 1. Permissions (hour-based)
             # ----------------------------------
             if rec.holiday_status_id.request_unit == 'hour':
-                count = self.env['hr.leave'].search_count([
+                count_early = self.env['hr.leave'].search_count([
                     ('employee_id', '=', rec.employee_id.id),
-                    ('holiday_status_id.request_unit', '=', 'hour'),
+                    ('holiday_status_id.id', '=', 84),
                     ('request_date_from', '>=', date_from),
                     ('request_date_from', '<=', date_to),
                     ('id', '!=', rec.id),
                 ])
 
-                if count >= 3:
+                if count_early >= 3:
                     raise ValidationError(
-                        f"{rec.employee_id.name} cannot take more than 3 permissions this month"
+                        f"{rec.employee_id.name} cannot take more than 3 early permissions this month"
+                    )
+                count_late = self.env['hr.leave'].search_count([
+                    ('employee_id', '=', rec.employee_id.id),
+                    ('holiday_status_id.id', '=', 86),
+                    ('request_date_from', '>=', date_from),
+                    ('request_date_from', '<=', date_to),
+                    ('id', '!=', rec.id),
+                ])
+
+                if count_late >= 3:
+                    raise ValidationError(
+                        f"{rec.employee_id.name} cannot take more than 3 late permissions this month"
                     )
 
             URGENT_TYPE_ID = 87
@@ -151,7 +163,7 @@ class HrLeave(models.Model):
     #             )
     #
     #     return res
-    
+
     def action_approve(self, check_state=True):
         user = self.env.user
 
@@ -159,7 +171,8 @@ class HrLeave(models.Model):
 
             # 1️⃣ Manager
             if leave.state == 'manager_approve':
-                if leave.employee_id.parent_id.user_id != user and not user.has_group('aldaleel_attendance_policy.group_hr_payroll_user_custom'):
+                if leave.employee_id.parent_id.user_id != user and not user.has_group(
+                        'aldaleel_attendance_policy.group_hr_payroll_user_custom'):
                     raise UserError("Only direct manager or HR  can approve")
 
                 leave.state = 'hr_approve'
@@ -187,5 +200,43 @@ class HrLeave(models.Model):
                 leave._action_validate(check_state)
                 # self._notify_employee()
 
-
         return True
+
+    def activity_update(self):
+        res = super(HrLeave, self).activity_update()
+
+        for leave in self:
+            # نحدد النص الإضافي
+            start = leave.request_date_from if leave.request_date_from else False
+            end = leave.request_date_to if leave.request_date_to else False
+            hour_from = leave.request_hour_from if leave.request_hour_from else False
+            hour_to = leave.request_hour_to if leave.request_hour_to else False
+            reason = leave.name or ''
+
+            extra_info = _(
+
+                "Start Date: %(start)s\n\n"
+                "End Date: %(end)s\n\n" 
+                "hour from : %(hour_from)s\n\n\n"
+                "hour to: %(hour_to)s\n\n\n"
+                "Reason: %(reason)s\n\n"
+            ) % {
+                             'start': start,
+                             'end': end,
+                             'hour_from': hour_from,
+                             'hour_to': hour_to,
+                             'reason': reason,
+                         }
+
+            # نحدث الـ activities المرتبطة بالـ leave
+            activities = self.env['mail.activity'].search([
+                ('res_model', '=', 'hr.leave'),
+                ('res_id', '=', leave.id),
+                ('automated', '=', True),
+            ])
+
+            for activity in activities:
+
+                activity.note = (activity.note or '') + extra_info
+
+        return res

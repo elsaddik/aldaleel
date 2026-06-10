@@ -7,7 +7,7 @@ from odoo.http import request, Response
 from datetime import date,datetime, time, timedelta
 import base64
 from ..service.service import Attachment
-
+import pytz
 
 
 
@@ -323,6 +323,8 @@ class HrMobileAPIEmployee(http.Controller):
         except Exception as e:
             return self._response(success=False, message=str(e), status=400)
 
+
+
     @http.route('/api/v1/permission/apply', type='http', auth='none', methods=['POST'], csrf=False)
     def api_apply_permission(self, **kwargs):
         user_id, error = self._verify_token()
@@ -357,9 +359,10 @@ class HrMobileAPIEmployee(http.Controller):
             if not employee:
                 return self._response(success=False, message="الموظف غير موجود", status=404)
 
-            # =========================
-            # Check Overlap (NEW LOGIC)
-            # =========================
+            tz_name = employee.tz or 'UTC'
+            user_tz = pytz.timezone(tz_name)
+            datetime_from = user_tz.localize(datetime_from).astimezone(pytz.UTC)
+            datetime_to = user_tz.localize(datetime_to).astimezone(pytz.UTC)
             existing_permissions = user_env['hr.permission'].sudo().search([
                 ('employee_id', '=', employee.id),
                 ('state', 'in', ['approved', 'to_approve']),
